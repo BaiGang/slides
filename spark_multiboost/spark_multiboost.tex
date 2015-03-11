@@ -1,0 +1,326 @@
+% !TEX program = XeLaTeX
+% !TEX encoding = UTF-8 Unicode
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Multi-Label classification on Apache Spark
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Beamer Presentation
+% LaTeX Template
+% Version 1.0 (10/11/12)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND THEMES
+%----------------------------------------------------------------------------------------
+
+\documentclass{beamer}
+
+\mode<presentation> {
+
+% The Beamer class comes with a number of default slide themes
+% which change the colors and layouts of slides. Below this is a list
+% of all the themes, uncomment each in turn to see what they look like.
+
+%\usetheme{default}
+%\usetheme{AnnArbor}
+%\usetheme{Antibes}
+%\usetheme{Bergen}
+%\usetheme{Berkeley}
+%\usetheme{Berlin}
+%\usetheme{Boadilla}
+%\usetheme{CambridgeUS}
+%\usetheme{Copenhagen}
+%\usetheme{Darmstadt}
+%\usetheme{Dresden}
+\usetheme{Frankfurt}
+%\usetheme{Goettingen}
+%\usetheme{Hannover}
+%\usetheme{Ilmenau}
+%\usetheme{JuanLesPins}
+%\usetheme{Luebeck}
+%\usetheme{Madrid}
+%\usetheme{Malmoe}
+%\usetheme{Marburg}
+%\usetheme{Montpellier}
+%\usetheme{PaloAlto}
+%\usetheme{Pittsburgh}
+%\usetheme{Rochester}
+%\usetheme{Singapore}
+%\usetheme{Szeged}
+%\usetheme{Warsaw}
+
+% As well as themes, the Beamer class has a number of color themes
+% for any slide theme. Uncomment each of these in turn to see how it
+% changes the colors of your current slide theme.
+
+%\usecolortheme{albatross}
+%\usecolortheme{beaver}
+%\usecolortheme{beetle}
+%\usecolortheme{crane}
+%\usecolortheme{dolphin}
+%\usecolortheme{dove}
+%\usecolortheme{fly}
+%\usecolortheme{lily}
+%\usecolortheme{orchid}
+%\usecolortheme{rose}
+%\usecolortheme{seagull}
+%\usecolortheme{seahorse}
+%\usecolortheme{whale}
+%\usecolortheme{wolverine}
+
+%\setbeamertemplate{footline} % To remove the footer line in all slides uncomment this line
+%\setbeamertemplate{footline}[page number] % To replace the footer line in all slides with a simple slide count uncomment this line
+
+%\setbeamertemplate{navigation symbols}{} % To remove the navigation symbols from the bottom of all slides uncomment this line
+}
+
+\usepackage{graphicx} % Allows including images
+\usepackage{booktabs} % Allows the use of \toprule, \midrule and \bottomrule in tables
+\usepackage{algorithm2e}
+\usepackage{fontspec}
+\usepackage{xeCJK}
+
+\setCJKmainfont{STHeiti}
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\title[MultiBoost]{Multi-Label Classification with Boosting \\ on Apache Spark} 
+
+\author{
+白刚  @BaiGang-
+} % Your name
+\institute[Sina] % Your institution as it will appear on the bottom of every slide, may be shorthand to save space
+{
+\textit{Sina Ad Algo}
+}
+%\date{\today} % Date, can be changed to a custom date
+\date{March 21, 2015.} % Date, can be changed to a custom date
+
+\begin{document}
+
+\begin{frame}
+\titlepage % Print the title page as the first slide
+\end{frame}
+
+\begin{frame}
+\frametitle{Overview} % Table of contents slide, comment this block out to remove it
+\tableofcontents % Throughout your presentation, if you choose to use \section{} and \subsection{} commands, these will automatically be printed on this slide as an overview of your presentation
+\end{frame}
+
+\section{中文}
+
+\begin{frame}
+\frametitle{中文在标题中} % Table of contents slide, comment this block out to remove it
+\begin{itemize}
+\item Originally for binary classification
+\item 尝试在列表中加中文。
+\item by training 中文 against a (\textit{re-})weighted sample set:
+\end{itemize}
+中文在正文中。
+\end{frame}
+
+
+%----------------------------------------------------------------------------------------
+%	PRESENTATION SLIDES
+%----------------------------------------------------------------------------------------
+
+%------------------------------------------------
+
+\section{The problem} 
+
+\begin{frame}
+\frametitle{The problem}
+To infer a \textbf{vector-valued} function $g : \mathcal{X} \rightarrow \mathcal{L}$ from a data set
+$$\mathcal{D} = \{({\mathbf{x}}_1, {\mathbf{l}}_1), \cdots, ({\mathbf{x}}_1, {\mathbf{l}}_1)\} \in (\mathcal{X} \times \mathcal{L})^n$$
+where $\mathbf{x} \in \mathcal{R}^d$ and $\mathbf{l} \in {\{+1,-1\}}^L$.
+\end{frame}
+
+\begin{frame}
+\frametitle{A naive solution}
+\begin{block}{}
+To produce the vector-valued function $g : \mathcal{X} \rightarrow \mathcal{L}$, let's train a vector of \textit{binary} classifiers, each predicts the corresponding label.
+\end{block}
+
+\begin{block}{}
+\begin{itemize}
+\item + reuses existing techniques
+\item + easy validation
+\item - inefficient
+\item - not (\textit{economically}) scalable
+\end{itemize}
+\end{block}
+\end{frame}
+
+\subsection{Preliminary: Boosting}
+
+\begin{frame}
+\frametitle{Preliminary: Boosting}
+\begin{itemize}
+\item Originally for binary classification
+\item A sequence of learners each corrects the mis-classification by preceding ones
+\item by training against a (\textit{re-})weighted sample set:
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Adaptive Boosting}
+
+\begin{algorithm}[H]
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+ \Input{$\mathcal{D} = (x_i, y_i) \in \{({\mathcal{R}}^n, \{-1, +1\}\}$, $T$, $\mathcal{B}$}
+ \Output{$\mathbf{H} = \Sigma_{t=1}^T{{\alpha}_t {\mathbf{B}}_t}$}
+ \Begin{
+   ${\mathbf{D}}_1(i) = 1/m$\;
+   \For{$t \leftarrow 1, \cdots, T$}{
+    ${\mathbf{B}}_t \leftarrow \mathcal{B}(\mathcal{D}, {\mathbf{D}}_t)$\;
+    Get hypothesis set: $h_t \leftarrow \mathbf{B}(\mathcal{D})$\;
+    Get the base coefficient ${\alpha}_t$\;
+    Update the weights: 
+    $${{\mathbf{D}}_{t+1}}(i) = {{{\mathbf{D}}_{t}}(i) \exp(- {\alpha}_t y_i h_t(x_i))} / Z_t $$
+    where $Z_t$ is a normalization factor\;
+   }
+ }
+\end{algorithm}
+
+\end{frame}
+
+\section{An efficient solution}
+
+\begin{frame}
+\frametitle{Multi-Label Boosting: An efficient solution}
+\begin{block}{The decomposition}
+  Decompose the general vector-valued function $\mathfrak{g}$ into a \textit{label independent} scalar function to \textbf{split the input space} and a \textit{feature independent} vector-valued function to \textbf{cast the labels}.
+\end{block}
+
+\begin{block}{Boosting}
+The weights $\mathbf{D}$ in AdaBoost are extended to each sample-label pair:
+$${\Sigma}_{i,l} D(i, l) = 1$$
+\end{block}
+
+\end{frame}
+
+\subsection{AdaBoost.MH}
+
+\begin{frame}
+\frametitle{AdaBoost.MH}
+To produce a vector-valued discriminant function $\mathbf{f}^{(T)} : \mathcal{R}^d \rightarrow \mathcal{R}^K$ with a small Hamming loss $\hat{R}_H (\mathbf{f}^{(T)}, \mathbf{D})$ by minimizing the \textit{weighted multi-class exponential margin-based error}
+$$\hat{R}_{EXP}(\mathbf{f}^{(T)}, \mathbf{D}) = \frac{1}{mK} {{\Sigma}_{i=1}^m} {{\Sigma}_{l=1}^K} {w_{i,l}\exp(- f_l^{(T)} y_{i,l})}$$
+
+\begin{block}{}
+\textbf{MH} means \textbf{M}ulti-class with \textbf{H}amming loss.
+\end{block}
+
+\begin{block}{}
+Using \textit{decomposed} base learner.
+\end{block}
+\end{frame}
+
+\begin{frame}
+\frametitle{AdaBoost.MH}
+\begin{algorithm}[H]
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+ \Input{$\mathcal{D} = (x_i, y_i) \in \{({\mathcal{R}}^n, \{-1, +1\}^K\}$, $T$, $\mathcal{B}$}
+ \Output{$\mathbf{H} = \Sigma_{t=1}^T{{\alpha}_t {\mathbf{v}}_t} {\varphi_t}$}
+ \Begin{
+   ${\mathbf{D}}_1(i, l) = \frac{1}{mK}$\;
+   \For{$t \leftarrow 1, \cdots, T$}{
+    $(\mathbf{v}_t, \varphi_t, \gamma_t) \leftarrow \mathcal{B}(\mathcal{D}, \mathbf{D}_t)$\;
+    Get hypothesis set: $h_t \leftarrow \mathbf{B}(\mathcal{D})$\;
+    Get the base coefficient ${\alpha}_t \leftarrow \frac{1}{2} \exp \frac{1+\gamma}{1-\gamma} $\;
+    Update the weights: 
+    $${{\mathbf{D}}_{t+1}}(i,l) = {{{\mathbf{D}}_{t}}(i,l) \exp(- {\alpha}_t y_{i,l} h_t(x_i))} / Z_t $$
+    where $Z_t$ is a normalization factor\;
+   }
+ }
+\end{algorithm}
+\end{frame}
+
+\subsection{Base learners}
+
+\begin{frame}
+\frametitle{The base learner for AdaBoost.MH}
+\begin{itemize}
+\item How to get $\varphi$, i.e split the input space?
+\item How to cast the labels, i.e produce the vector value using  $\varphi$?
+\item How to calculate the base learner factor $\alpha$?
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Base learning}
+\begin{itemize}
+\item The \textit{weighted per-class error rate}
+$$\mu_{l-} = \sum_{i=1}^{n}w_{i,j}\mathfrak{I}\{\varphi(\mathbf{x}_i) \neq y_{i,l}\}$$
+\item The \textit{weighted per-class correct classification rate}
+$$\mu_{l+} = \sum_{i=1}^{n}w_{i,j}\mathfrak{I}\{\varphi(\mathbf{x}_i) = y_{i,l}\}$$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Base learning}
+\begin{itemize}
+\item The \textit{class-wise edge} with $\varphi(\bullet) \in \{\pm 1\}$ and $y_{i,l} \in \{\pm 1\}$
+$$\gamma_l = v_l (\mu_{l+} - \mu_{l-}) = \sum_{i=1}^{n} w_{i,l} v_l \varphi(\mathbf{x}_i) y_{i,l}$$
+\item The full multi-class edge of the classifier
+$$\gamma = \gamma(\mathbf{v}, \varphi, \mathbf{W}) = \sum_{l=1}^{K} \gamma_l = \sum_{l=1}^{K} v_l(\mu_{l+} - \mu_{l-})$$
+$$= \sum_{i=1}^{n} \sum_{l=1}^{K} w_{i,l} v_l \varphi(\mathbf{x}_i) y_{i,l} $$
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Base learning}
+\begin{block}{Given $\varphi(\bullet)$, the votes $\mathbf{v}$}
+which maximize the full edge is
+\[v_l = \left\{
+  \begin{array}{l l}
+  1 \quad \quad \text{   if } \mu_{l+} > \mu_{l-} \\
+  -1 \quad \text{ otherwise }
+  \end{array} \right. \]
+\end{block}
+\begin{block}{$\varphi(\bullet)$ is determined by maximazing the full edge $\gamma$}
+\begin{itemize}
+\item Decision Stump: finding the best split cut
+\item Hamming tree: node split with the max edge improvement
+\end{itemize}
+\end{block}
+\end{frame}
+
+\begin{frame}
+\frametitle{The base learner factor}
+\begin{block}{The EXP loss:}
+$$Z(\mathbf{h}, \mathbf{W}) = \sum_{i=1}^{n} \sum_{l=1}^{K} w_{i,l} \exp(-\alpha v_l \varphi(\mathbf{x}_i) y_{i,l}) $$
+$$= \frac{e^\alpha + e^{-\alpha}}{2} - \frac{e^\alpha - e^{-\alpha}}{2} \sum_{l=1}^{K} v_l(\mu_{l+} - \mu_{l-})$$
+\end{block}
+\begin{block}{$\alpha$ minimizing the EXP loss:}
+$$\alpha = \frac{1}{2} \log \frac{1+\gamma}{1-\gamma}$$
+\end{block}
+\end{frame}
+
+%----------------------------------------------------------------------------------------
+
+\begin{frame}
+\frametitle{MultiBoost on Spark}
+\begin{itemize}
+\item Abstractions: Base/Strong Model/Alogirithm
+\item Currently, Decision Stump and AdaBoost.MH are supported.
+\item https://github.com/BaiGang/spark\_multiboost
+\item 'Fork and Star' are welcome!
+\end{itemize}
+\end{frame}
+
+\end{document} 
