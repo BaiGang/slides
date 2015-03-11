@@ -1,0 +1,253 @@
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+% Beamer Presentation
+% LaTeX Template
+% Version 1.0 (10/11/12)
+%
+% This template has been downloaded from:
+% http://www.LaTeXTemplates.com
+%
+% License:
+% CC BY-NC-SA 3.0 (http://creativecommons.org/licenses/by-nc-sa/3.0/)
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%----------------------------------------------------------------------------------------
+%	PACKAGES AND THEMES
+%----------------------------------------------------------------------------------------
+
+\documentclass{beamer}
+
+\mode<presentation> {
+
+% The Beamer class comes with a number of default slide themes
+% which change the colors and layouts of slides. Below this is a list
+% of all the themes, uncomment each in turn to see what they look like.
+
+%\usetheme{default}
+%\usetheme{AnnArbor}
+%\usetheme{Antibes}
+%\usetheme{Bergen}
+%\usetheme{Berkeley}
+%\usetheme{Berlin}
+%\usetheme{Boadilla}
+%\usetheme{CambridgeUS}
+%\usetheme{Copenhagen}
+%\usetheme{Darmstadt}
+%\usetheme{Dresden}
+\usetheme{Frankfurt}
+%\usetheme{Goettingen}
+%\usetheme{Hannover}
+%\usetheme{Ilmenau}
+%\usetheme{JuanLesPins}
+%\usetheme{Luebeck}
+%usetheme{Madrid}
+%\usetheme{Malmoe}
+%\usetheme{Marburg}
+%\usetheme{Montpellier}
+%\usetheme{PaloAlto}
+%\usetheme{Pittsburgh}
+%\usetheme{Rochester}
+%\usetheme{Singapore}
+%\usetheme{Szeged}
+%\usetheme{Warsaw}
+
+% As well as themes, the Beamer class has a number of color themes
+% for any slide theme. Uncomment each of these in turn to see how it
+% changes the colors of your current slide theme.
+
+%\usecolortheme{albatross}
+%\usecolortheme{beaver}
+%\usecolortheme{beetle}
+%\usecolortheme{crane}
+%\usecolortheme{dolphin}
+%\usecolortheme{dove}
+%\usecolortheme{fly}
+%\usecolortheme{lily}
+%\usecolortheme{orchid}
+%\usecolortheme{rose}
+%\usecolortheme{seagull}
+%\usecolortheme{seahorse}
+%\usecolortheme{whale}
+%\usecolortheme{wolverine}
+
+%\setbeamertemplate{footline} % To remove the footer line in all slides uncomment this line
+%\setbeamertemplate{footline}[page number] % To replace the footer line in all slides with a simple slide count uncomment this line
+
+%\setbeamertemplate{navigation symbols}{} % To remove the navigation symbols from the bottom of all slides uncomment this line
+}
+
+\usepackage{graphicx} % Allows including images
+\usepackage{booktabs} % Allows the use of \toprule, \midrule and \bottomrule in tables
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+
+%----------------------------------------------------------------------------------------
+%	TITLE PAGE
+%----------------------------------------------------------------------------------------
+
+\title[LR ADMM]{Solving Logistic Regression using \\ Alternating Direction Method of Multipliers} 
+
+\author{
+baigang@
+} % Your name
+\institute[SAA] % Your institution as it will appear on the bottom of every slide, may be shorthand to save space
+{
+\textit{Sina Ad Algo}
+}
+\date{\today} % Date, can be changed to a custom date
+
+
+\begin{document}
+
+\begin{frame}
+\titlepage % Print the title page as the first slide
+\end{frame}
+
+\begin{frame}
+\frametitle{Overview} % Table of contents slide, comment this block out to remove it
+\tableofcontents % Throughout your presentation, if you choose to use \section{} and \subsection{} commands, these will automatically be printed on this slide as an overview of your presentation
+\end{frame}
+
+%----------------------------------------------------------------------------------------
+%	PRESENTATION SLIDES
+%----------------------------------------------------------------------------------------
+
+%------------------------------------------------
+\section{The ADMM method} 
+
+\begin{frame}
+\frametitle{Alternating Direction Method of Multipliers}
+\begin{itemize}
+\item "decomposable method of multipliers" proposed by Gabay, Mercier, Glowinski and Marrocco
+\item arbitrary-scale optimization
+\item "consensus optimization" aka distribution
+\item simple Gauss-Seidel iteration
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Alternating Direction Method of Multipliers}
+\begin{block}{ADMM problem form}
+$$\text{minimize } f(\mathbf{x}) + g(\mathbf{z})$$
+$$\text{subject to } \mathbf{Ax} + \mathbf{Bz} = \mathbf{c}$$
+with $f$ and $g$ convex.
+\end{block}
+\begin{block}{Augmented Lagrangian}
+$$L_\rho(\mathbf{x},\mathbf{z},\mathbf{y}) = f(\mathbf{x}) + g(\mathbf{z}) + \mathbf{y}^T(\mathbf{Ax}+\mathbf{Bz}-\mathbf{c}) + \frac{\rho}{2} {\|\mathbf{Ax}+\mathbf{Bz}-\mathbf{c}\|}_2^2$$
+\end{block}
+\end{frame}
+
+\begin{frame}
+\frametitle{ADMM Iterations}
+
+ADMM consists of the iterations:
+$$\mathbf{x}^{k+1} = \argmin_\mathbf{x} L_\rho (\mathbf{x},\mathbf{z}^k,\mathbf{y}^k)$$
+$$\mathbf{z}^{k+1} = \argmin_\mathbf{z} L_\rho (\mathbf{x}^{k+1},\mathbf{z},\mathbf{y}^k)$$
+$$\mathbf{y}^{k+1} = \mathbf{y}^k + \rho (\mathbf{Ax}^{k+1}+\mathbf{Bz}^{k+1}-\mathbf{c})$$
+where $\rho > 0$.
+\end{frame}
+
+\begin{frame}
+\frametitle{Scaled form of ADMM}
+Residual $\mathbf{r} = \mathbf{Ax}+\mathbf{Bz}-\mathbf{c}$, we have
+$$\mathbf{y}^T \mathbf{r} + \frac{\rho}{2} {\|\mathbf{r}\|}_2^2 = \frac{\rho}{2} [(\mathbf{r} + \frac{\mathbf{y}^T}{\rho})^2 - (\frac{\mathbf{y}^T}{\rho})^2]$$
+Let $\mathbf{u} = \frac{\mathbf{y}^T}{\rho}$, we can express ADMM as
+$$\mathbf{x}^{k+1} = \argmin_\mathbf{x} (f(\mathbf{x}) + \frac{\rho}{2} {\|\mathbf{Ax}+\mathbf{Bz}^k-\mathbf{c}+\mathbf{u}^k\|}_2^2) $$
+$$\mathbf{z}^{k+1} = \argmin_\mathbf{z} (g(\mathbf{z}) + \frac{\rho}{2} {\|\mathbf{Ax}^{k+1}+\mathbf{Bz}-\mathbf{c}+\mathbf{u}^k\|}_2^2) $$
+$$\mathbf{u}^{k+1} = \mathbf{u}^k + \mathbf{Ax}^{k+1}+\mathbf{Bz}^{k+1}-\mathbf{c}$$
+\end{frame}
+
+\begin{frame}
+\frametitle{Consensus ADMM}
+In [Boyd et al 2010], equations 7.6, 7.7 and 7.8.
+$$x_j^{k+1} = \argmin_{x_j} (f_j(x_j) + \frac{\rho}{2} {\|x_j - z^k + u_j^k\|}_2^2)$$
+$$z^{k+1} = \argmin_z (g(z) + \frac{N\rho}{2} {\|z - \bar{x}^{k+1} + \bar{u}^k\|}_2^2)$$
+$$u_j^{k+1} = u_j^k + x_j^{k+1} - z^{k+1}$$
+\end{frame}
+
+\section{Logistic Regression}
+\begin{frame}
+\frametitle{Logistic Regression}
+\begin{block}{Prediction}
+$$p(\mathbf{x}) = \frac{1}{1 + e^{-\mathbf{wx}}}$$
+\end{block}
+\begin{block}{Learning}
+$$\text{minimize } \frac{1}{m} \sum_{i=1}^{m} \log(1+\exp(-y_i* \mathbf{w} \mathbf{x}_i)) + \lambda{\|\mathbf{w}\|}_2^2$$
+\end{block}
+\end{frame}
+
+\section{Distributed Learning of LR with ADMM}
+\begin{frame}
+\frametitle{Logistic Regression with ADMM}
+Decompose 
+$$\frac{1}{m} \sum_{i=1}^{m} \log(1+\exp(-y_i* \mathbf{w} \mathbf{x}_i)) + \lambda{\|\mathbf{w}\|}_2^2$$
+into
+$$f(\mathbf{w}) + g(\mathbf{z})\text{, subject to } \mathbf{w} - \mathbf{z} = 0$$
+where
+$$f(\mathbf{w}) = \frac{1}{m} \sum_{i=1}^{m} \log(1+\exp(-y_i* \mathbf{w} \mathbf{x}_i))$$
+$$g(\mathbf{z}) = \lambda{\|\mathbf{z}\|}_2^2$$
+\end{frame}
+
+\begin{frame}
+\frametitle{Distributed Learning of LR with ADMM}
+Using consensus ADMM, $(\mathbf{x}_i, y_i)$s are distributed on $N$ nodes.
+$$f(\mathbf{w}) = \sum_{j=1}^N f_j(\mathbf{w}_j)$$
+So we can update $\mathbf{w}_j$ on each node, then update $\mathbf{z}$ with the constraint $\mathbf{w}_j - \mathbf{z} = 0$.
+\end{frame}
+
+\begin{frame}
+\frametitle{Distributed Learning of LR with ADMM}
+$$\mathbf{w}_j^{k+1} = \argmin_w \frac{1}{m_j} \sum_{i_j = 1}^{m_j} \log(1 + \exp(-y_{i_j}*\mathbf{w}_j\mathbf{x}_{i_j})) + \frac{\rho}{2} {\|\mathbf{w}_j - \mathbf{z}^k + \mathbf{u}_j^k\|}$$
+$\mathbf{z}$ is updated by minimizing $\lambda \|\mathbf{z}\|_2^2 + \frac{N\rho}{2}{\|\mathbf{z} - \bar{\mathbf{w}}^k - \bar{\mathbf{u}}^k\|}_2^2$. By applying $\frac{\partial \bullet}{\partial \mathbf{z}} = 0$, we get
+$$\mathbf{z}^{k+1} = \frac{N\rho}{2\lambda + N\rho}(\bar{\mathbf{w}}^{k+1} + \bar{\mathbf{u}}^k)$$
+$$\mathbf{u}_j^{k+1} = \mathbf{u}_j^k + \mathbf{w}_j^{k+1} - \mathbf{z}^{k+1}$$
+\end{frame}
+
+
+%----------------------------------------------------------------------------------------
+
+\begin{frame}
+\frametitle{Distributed updating of $\mathbf{w}_j$}
+$$\mathbf{w}_j^{k+1} = \argmin_w \frac{1}{m_j} \sum_{i_j = 1}^{m_j} \log(1 + \exp(-y_{i_j}*\mathbf{w}_j\mathbf{x}_{i_j})) + \frac{\rho}{2} {\|\mathbf{w}_j - \mathbf{z}^k + \mathbf{u}_j^k\|}$$
+\begin{itemize}
+\item Traditional loss and gradient of LR.
+\item Can be evaluate efficiently using SGD or/and LBFGS.
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Globally updating of $\mathbf{z}$}
+$$\mathbf{z}^{k+1} = \frac{N\rho}{2\lambda + N\rho} {(\bar{\mathbf{w}}^{k+1} + \bar{\mathbf{u}}^k)}$$
+\begin{itemize}
+\item Using platform specific aggregation to evaluate $\bar{\mathbf{w}}$ and $\bar{\mathbf{u}}$.
+\begin{itemize}
+\item \textbf{allReduce} on Hadoop with Vowpal Wabbit.
+\item \textbf{RDD.aggregate} on Apache Spark.
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{Locally updating of $\mathbf{u}_j$}
+Using the global consensus $\mathbf{z}$:
+$$\mathbf{u}_j^{k+1} = \mathbf{u}_j^k + \mathbf{w}_j^{k+1} - \mathbf{z}^{k+1}$$
+\end{frame}
+
+\begin{frame}
+\frametitle{TODO}
+\begin{block}{Implementing LR with ADMM on Vowpal Wabbit}
+\begin{itemize}
+\item Straightforward iterations.
+\item \textbf{allReduce} and \textbf{L-BFGS} are provided.
+\item VW's impl of \textbf{L-BFGS} should be modified to work on local dataset.
+\end{itemize}
+\end{block}
+\begin{block}{LR with ADMM on Apache Spark}
+Implemented by a FB engineer. https://github.com/ajtulloch/admmlrspark
+\end{block}
+\begin{block}{SVM with ADMM}
+Homework: Applying ADMM decomposition to SVM with hinge loss.
+\end{block}
+\end{frame}
+
+\end{document} 
