@@ -408,8 +408,15 @@ which maximize the full edge is
 \begin{itemize}
 \item Decision Stump: finding the best split cut
 \item Hamming tree: node split with the max edge improvement
+\item Generalized binary classifier.
 \end{itemize}
 \end{block}
+\end{frame}
+
+\begin{frame}
+\frametitle{Generalized binary classifier as a base learner}
+TODO: 介绍如何使用GBC作为base learner \\
+目标函数是什么，为什么与 edge-maximization 是一致的
 \end{frame}
 
 \begin{frame}
@@ -432,8 +439,8 @@ $$\alpha = \frac{1}{2} \log \frac{1+\gamma}{1-\gamma}$$
 \begin{frame}
 \frametitle{MultiBoost on Spark}
 \begin{itemize}
-\item Abstractions: Base/Strong Model/Alogirithm
-\item Currently, Decision Stump and AdaBoost.MH are supported.
+\item Base learner如何实现
+\item Strong learner实现方式
 \item https://github.com/BaiGang/spark\_multiboost
 \item 'Fork and Star' are welcome!
 \end{itemize}
@@ -442,23 +449,34 @@ $$\alpha = \frac{1}{2} \log \frac{1+\gamma}{1-\gamma}$$
 \subsection{实验与效果}
 
 \begin{frame}
-\frametitle{MultiBoost on Spark}
+\frametitle{Experiments setup}
 \begin{itemize}
-\item Abstractions: Base/Strong Model/Alogirithm
-\item Currently, Decision Stump and AdaBoost.MH are supported.
-\item https://github.com/BaiGang/spark\_multiboost
-\item 'Fork and Star' are welcome!
+\item 数据集来源 -- 内部、外部通用测试集
+\item 集群环境 TODO
 \end{itemize}
 \end{frame}
+
+\begin{frame}
+\frametitle{运行时间}
+TODO: 对应数据集的训练时间长度
+\end{frame}
+
+\begin{frame}
+\frametitle{效果}
+\begin{itemize}
+\item 对应数据集的训练和测试error，有图
+\end{itemize}
+\end{frame}
+
 
 \subsection{后续工作}
 
 \begin{frame}
 \frametitle{MultiBoost on Spark}
 \begin{itemize}
-\item Abstractions: Base/Strong Model/Alogirithm
-\item Currently, Decision Stump and AdaBoost.MH are supported.
-\item https://github.com/BaiGang/spark\_multiboost
+\item Base learner使用二分类，与edge-maximizing目标，需要数学证明
+\item Hamming tree作为base learner
+\item 现有时间基于Spark 1.1.x, 应用新的spark ml interface
 \item 'Fork and Star' are welcome!
 \end{itemize}
 \end{frame}
