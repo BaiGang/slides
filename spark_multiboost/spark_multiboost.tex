@@ -82,6 +82,7 @@
 %\usecolortheme{wolverine}
 
 %\setbeamertemplate{footline} % To remove the footer line in all slides uncomment this line
+\setbeamertemplate{headline} % To remove the header line in all slides uncomment this line
 %\setbeamertemplate{footline}[page number] % To replace the footer line in all slides with a simple slide count uncomment this line
 
 %\setbeamertemplate{navigation symbols}{} % To remove the navigation symbols from the bottom of all slides uncomment this line
@@ -93,7 +94,8 @@
 \usepackage{fontspec}
 \usepackage{xeCJK}
 
-\setCJKmainfont{STHeiti}
+\setCJKmainfont[BoldFont=STHeiti,ItalicFont=STFangsong]{STKaiti}
+\hypersetup{colorlinks=false}
 
 %----------------------------------------------------------------------------------------
 %	TITLE PAGE
@@ -102,11 +104,11 @@
 \title[MultiBoost]{Multi-Label Classification with Boosting \\ on Apache Spark} 
 
 \author{
-白刚  @BaiGang-
+白刚  \href{http://weibo.com/baigang111}{@BaiGang-}
 } % Your name
 \institute[Sina] % Your institution as it will appear on the bottom of every slide, may be shorthand to save space
 {
-\textit{Sina Ad Algo}
+\textit{Sina Ad-Algo}
 }
 %\date{\today} % Date, can be changed to a custom date
 \date{March 21, 2015.} % Date, can be changed to a custom date
@@ -118,22 +120,18 @@
 \end{frame}
 
 \begin{frame}
+\frametitle{关于这一文档}
+\begin{itemize}
+\item TODO: 自我介绍
+\item \LaTeX Beamer presentation. 
+\item \url{https://github.com/baigang/slides}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
 \frametitle{Overview} % Table of contents slide, comment this block out to remove it
 \tableofcontents % Throughout your presentation, if you choose to use \section{} and \subsection{} commands, these will automatically be printed on this slide as an overview of your presentation
 \end{frame}
-
-\section{中文}
-
-\begin{frame}
-\frametitle{中文在标题中} % Table of contents slide, comment this block out to remove it
-\begin{itemize}
-\item Originally for binary classification
-\item 尝试在列表中加中文。
-\item by training 中文 against a (\textit{re-})weighted sample set:
-\end{itemize}
-中文在正文中。
-\end{frame}
-
 
 %----------------------------------------------------------------------------------------
 %	PRESENTATION SLIDES
@@ -141,17 +139,134 @@
 
 %------------------------------------------------
 
-\section{The problem} 
+\section{背景}
+
+\subsection{The problem}
+\begin{frame}
+\frametitle{背景：The problem}
+
+  \begin{block}{Business}
+   广告为媒体带来收益，同时也潜在的破坏用户体验。
+  \end{block}
+
+  \pause
+
+  \begin{columns}[T]
+    \begin{column}{.5\textwidth}
+      \begin{center}
+      \includegraphics[width=0.8\textwidth]{img/good_ad.png}
+      \end{center}
+      \begin{center}
+      \includegraphics[width=0.15\textwidth]{img/emoji_smiley.png}
+      \end{center}
+    \end{column}
+    \begin{column}{.5\textwidth}
+      \begin{center}
+      \includegraphics[width=0.8\textwidth]{img/bad_ad.png}
+      \end{center}
+      \begin{center}
+      \includegraphics[width=0.15\textwidth]{img/emoji_unamused.png}
+      \end{center}
+    \end{column}
+  \end{columns}
+
+  \pause
+
+  \begin{block}{}
+   不同的广告有不同的受众。\\
+   如何将广告投放给其对应的受众？
+  \end{block}
+
+\end{frame}
+
+\subsection{User Profiling}
 
 \begin{frame}
-\frametitle{The problem}
+\frametitle{背景：User profiling}
+\begin{figure}
+\includegraphics[width=.6\linewidth]{img/target_market.png}
+\end{figure}
+\begin{block}{理解用户兴趣}
+一个用户属于哪个人群，是哪些广告的潜在受众。
+\end{block}
+\end{frame}
+
+\begin{frame}
+\frametitle{背景: User profiling}
+\begin{example}{用户兴趣}
+  \begin{columns}
+
+   \pause
+
+    \begin{column}{0.333\textwidth}
+      \begin{block}{User1}
+      \begin{itemize}
+        \item 财经-基金
+        \item 财经-股票
+        \item 房产-装修
+        \item ...
+      \end{itemize}
+      \end{block}
+    \end{column}
+
+    \pause
+
+    \begin{column}{0.333\textwidth}
+      \begin{block}{User2}
+      \begin{itemize}
+        \item 休闲-境外游
+        \item 娱乐-综艺
+        \item 休闲-摄影
+        \item ...
+      \end{itemize}
+      \end{block}
+    \end{column}
+
+    \pause
+
+    \begin{column}{0.333\textwidth}
+    \begin{block}{User3}
+      \begin{itemize}
+        \item 体育-足球
+        \item 体育-NBA
+        \item 游戏动漫
+        \item ...
+      \end{itemize}
+      \end{block}
+    \end{column}
+  \end{columns}
+\end{example}
+
+\pause
+
+用户兴趣是多维度的 $\Rightarrow$ 用户标签集合 \\
+标签是根据business预先设定的 
+
+\pause
+
+\begin{block}{}
+我们实际要解决的问题：如何给用户加\textbf{对应的标签}？
+\end{block}
+\end{frame}
+
+\section{问题与求解}
+
+\begin{frame}
+\frametitle{Overview} % Table of contents slide, comment this block out to remove it
+\tableofcontents[currentsection] % Throughout your presentation, if you choose to use \section{} and \subsection{} commands, these will automatically be printed on this slide as an overview of your presentation
+\end{frame}
+
+\subsection{问题抽象}
+
+\begin{frame}
+\frametitle{问题抽象}
 To infer a \textbf{vector-valued} function $g : \mathcal{X} \rightarrow \mathcal{L}$ from a data set
 $$\mathcal{D} = \{({\mathbf{x}}_1, {\mathbf{l}}_1), \cdots, ({\mathbf{x}}_1, {\mathbf{l}}_1)\} \in (\mathcal{X} \times \mathcal{L})^n$$
 where $\mathbf{x} \in \mathcal{R}^d$ and $\mathbf{l} \in {\{+1,-1\}}^L$.
 \end{frame}
 
 \begin{frame}
-\frametitle{A naive solution}
+\frametitle{Naive方案}
 \begin{block}{}
 To produce the vector-valued function $g : \mathcal{X} \rightarrow \mathcal{L}$, let's train a vector of \textit{binary} classifiers, each predicts the corresponding label.
 \end{block}
@@ -165,6 +280,7 @@ To produce the vector-valued function $g : \mathcal{X} \rightarrow \mathcal{L}$,
 \end{itemize}
 \end{block}
 \end{frame}
+
 
 \subsection{Preliminary: Boosting}
 
@@ -199,7 +315,7 @@ To produce the vector-valued function $g : \mathcal{X} \rightarrow \mathcal{L}$,
 
 \end{frame}
 
-\section{An efficient solution}
+\subsection{Multi-label boosting}
 
 \begin{frame}
 \frametitle{Multi-Label Boosting: An efficient solution}
@@ -213,8 +329,6 @@ $${\Sigma}_{i,l} D(i, l) = 1$$
 \end{block}
 
 \end{frame}
-
-\subsection{AdaBoost.MH}
 
 \begin{frame}
 \frametitle{AdaBoost.MH}
@@ -249,8 +363,6 @@ Using \textit{decomposed} base learner.
  }
 \end{algorithm}
 \end{frame}
-
-\subsection{Base learners}
 
 \begin{frame}
 \frametitle{The base learner for AdaBoost.MH}
@@ -312,6 +424,34 @@ $$\alpha = \frac{1}{2} \log \frac{1+\gamma}{1-\gamma}$$
 \end{frame}
 
 %----------------------------------------------------------------------------------------
+
+\section{Multiboost on Spark}
+
+\subsection{实现方案}
+
+\begin{frame}
+\frametitle{MultiBoost on Spark}
+\begin{itemize}
+\item Abstractions: Base/Strong Model/Alogirithm
+\item Currently, Decision Stump and AdaBoost.MH are supported.
+\item https://github.com/BaiGang/spark\_multiboost
+\item 'Fork and Star' are welcome!
+\end{itemize}
+\end{frame}
+
+\subsection{实验与效果}
+
+\begin{frame}
+\frametitle{MultiBoost on Spark}
+\begin{itemize}
+\item Abstractions: Base/Strong Model/Alogirithm
+\item Currently, Decision Stump and AdaBoost.MH are supported.
+\item https://github.com/BaiGang/spark\_multiboost
+\item 'Fork and Star' are welcome!
+\end{itemize}
+\end{frame}
+
+\subsection{后续工作}
 
 \begin{frame}
 \frametitle{MultiBoost on Spark}
