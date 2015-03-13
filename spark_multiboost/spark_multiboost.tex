@@ -261,7 +261,7 @@
 \begin{frame}
 \frametitle{问题抽象}
 \begin{block}{Model and prediction}
-根据给出的user feature$\mathbf{x}$，输出符合这一user兴趣的标签集合$\mathcal{L}$.
+根据给出的user feature $\mathbf{x}$，输出符合其兴趣的标签集合$\mathcal{L}$.
 $$\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$$
 \end{block}
 
@@ -276,9 +276,21 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 \end{frame}
 
 \begin{frame}
+\frametitle{Side note: why not clustering?}
+
+\begin{itemize}
+\item 为什么不用Clustering
+  \begin{itemize}
+    \item Cluster结果 $\neq$  pre-defined labels
+    \item 但可以作为user feature
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
 \frametitle{Multi-Label classification: Naive方案}
 
-为了得到这个vector-valued function $\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$, let's train a vector of $\|\mathcal{L}\|$ \textit{binary} classifiers. So each one predicts the corresponding label.
+为了得到这个vector-valued function $\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$, 我们为每个$\mathit{l} \in \mathcal{L}$ 都训练一个\textit{binary} classifier，预测时将判断每一个标签的结果。
 
 * {\small \color{gray} One-versus-all implemented in LibSVM, scikit-learn, etc.}
 
@@ -302,58 +314,44 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 \begin{frame}
 \frametitle{Multi-label classification: Scalable方案}
 目标：
-  \begin{itemize}
-    \item 模型本身的输出就是多标签结果；
-    \item 训练过程是最小化Hamming loss.
-    \item Scalable.
-  \end{itemize}
+  {
+    \setbeamertemplate{itemize items}[checkmark]
+    \begin{itemize}
+      \item 模型本身的输出就是多标签结果；
+      \item 训练过程是最小化Hamming loss；
+      \item Scalable.
+    \end{itemize}
+  }
 \pause
-
-\begin{itemize}
-\item 为什么不用Clustering
-  \begin{itemize}
-    \item Cluster结果 $\neq$  pre-defined labels
-    \item 但可以作为user feature
-  \end{itemize}
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Multi-label classification: Scalable方案}
-目标：
-  \begin{itemize}
-    \item 模型本身的输出就是多标签结果；
-    \item 训练过程是最小化Hamming loss.
-    \item Scalable.
-  \end{itemize}
 
 方案：
   {
     \setbeamertemplate{itemize items}[square]
     \begin{itemize}
-      \item {\color{purple} "Improved Boosting Algorithm Using Confidence-Rated Predictions", Schapire \& Singer, 1999.} \\
-      \item {\color{purple} "The return of AdaBoost.MH: multi-class Hamming trees", Kegl, 2014.} \\
+      \item {\color{purple} "Improved Boosting Algorithm Using Confidence-Rated Predictions", Schapire \& Singer, 1999.}
+      \begin{itemize}
+        \item 提出了AdaBoost.MH算法.
+      \end{itemize}
+      \item {\color{purple} "The return of AdaBoost.MH: multi-class Hamming trees", Kegl, 2014.}
+      \begin{itemize}
+        \item Factorization of base learners in AdaBoost.MH.
+        \item 提出decision stump \& Hamming tree作为base learner.
+      \end{itemize}
       \item {\color{purple} MultiBoost, http://multiboost.org}
+      \begin{itemize}
+        \item Open-sourced, single-machine implementations in CPP.
+      \end{itemize}
     \end{itemize}
   }
 \end{frame}
 
-
-
-\begin{frame}
-\frametitle{Multi-label classification: 目标函数}
-
-Weighted Hamming loss: 
-
-$$$$
-
-\end{frame}
 
 \subsection{Preliminary: Boosting}
 
 \begin{frame}
 \frametitle{Preliminary: Boosting}
 \begin{itemize}
+\item An additive model. $H(\mathbf{x}) = \sum_i^T \alpha_i h_i(\mathbf{x})$
 \item A sequence of learners each corrects the mis-classification by preceding ones,
 \item trained against a (\textit{re-})weighted sample set.
 \end{itemize}
@@ -361,9 +359,6 @@ $$$$
 \begin{figure}
 \includegraphics[width=.5\linewidth]{img/boosting.png}
 \end{figure}
-\begin{itemize}
-\item An additive model. $H(\mathbf{x}) = \sum_i^T \alpha_i h_i(\mathbf{x})$
-\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -371,16 +366,16 @@ $$$$
 
 \begin{algorithm}[H]
 \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
- \Input{$\mathcal{D} = (x_i, y_i) \in \{({\mathcal{R}}^n, \{-1, +1\}\}$, $T$, $\mathcal{B}$}
- \Output{$\mathbf{H} = \Sigma_{t=1}^T{{\alpha}_t {\mathbf{B}}_t}$}
+ \Input{$\mathcal{D} = (x_i, y_i) \in \{({\mathcal{R}}^n, \{-1, +1\})\}$, $T$, $\mathfrak{B}$}
+ \Output{$\mathbf{H} = \Sigma_{t=1}^T{{\alpha}_t {\mathcal{B}}_t}$}
  \Begin{
-   ${\mathbf{D}}_1(i) = 1/m$\;
+   ${\mathbf{W}}_1(i) = 1/m$\;
    \For{$t \leftarrow 1, \cdots, T$}{
-    ${\mathbf{B}}_t \leftarrow \mathcal{B}(\mathcal{D}, {\mathbf{D}}_t)$\;
-    Get hypothesis set: $h_t \leftarrow \mathbf{B}(\mathcal{D})$\;
+    ${\mathcal{B}}_t \leftarrow \mathfrak{B}(\mathcal{D}, {\mathbf{W}}_t)$\;
+    Get hypothesis set: $h_t \leftarrow \mathcal{B}(\mathcal{D})$\;
     Get the base coefficient ${\alpha}_t$\;
     Update the weights: 
-    $${{\mathbf{D}}_{t+1}}(i) = {{{\mathbf{D}}_{t}}(i) \exp(- {\alpha}_t y_i h_t(x_i))} / Z_t $$
+    $${{\mathbf{W}}_{t+1}}(i) = {{{\mathbf{W}}_{t}}(i) \exp(- {\alpha}_t y_i h_t(x_i))} / Z_t $$
     where $Z_t$ is a normalization factor\;
    }
  }
@@ -391,7 +386,7 @@ $$$$
 \subsection{Multi-label boosting}
 
 \begin{frame}
-\frametitle{Multi-Label Boosting}
+\frametitle{AdaBoost.MH}
 
 The weights $\mathbf{D}$ in \textit{AdaBoost} are extended to each sample-label pair:
 $${\Sigma}_{i,l} D(i, l) = 1$$
@@ -405,12 +400,14 @@ $$\mathcal{H}(\mathbf{x}) = \alpha  \phi(\mathbf{x}) \mathbf{v}$$
 
 \begin{frame}
 \frametitle{AdaBoost.MH}
+\begin{block}{}
+\textbf{MH}: \textbf{M}ulti-class with \textbf{H}amming loss.
+\end{block}
+
 To produce a vector-valued discriminant function $\mathbf{f}^{(T)} : \mathcal{R}^d \rightarrow \mathcal{R}^K$ with a small Hamming loss $\hat{R}_H (\mathbf{f}^{(T)}, \mathbf{D})$ by minimizing the \textit{weighted multi-class exponential margin-based error}
 $$\hat{R}_{EXP}(\mathbf{f}^{(T)}, \mathbf{D}) = \frac{1}{mK} {{\Sigma}_{i=1}^m} {{\Sigma}_{l=1}^K} {w_{i,l}\exp(- f_l^{(T)} y_{i,l})}$$
 
-\begin{block}{}
-\textbf{MH} means \textbf{M}ulti-class with \textbf{H}amming loss.
-\end{block}
+
 
 \begin{block}{}
 Using \textit{decomposed} base learner.
