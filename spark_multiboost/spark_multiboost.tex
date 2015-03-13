@@ -239,7 +239,7 @@
 
 \pause
 
-用户兴趣是多维度的 $\Rightarrow$ 用户标签集合 \\
+用户兴趣是多维度的 $\Rightarrow$ 标签集合 \\
 标签是根据business预先设定的 
 
 \pause
@@ -260,36 +260,80 @@
 
 \begin{frame}
 \frametitle{问题抽象}
-To infer a \textbf{vector-valued} function $g : \mathcal{X} \rightarrow \mathcal{L}$ from a data set
-$$\mathcal{D} = \{({\mathbf{x}}_1, {\mathbf{l}}_1), \cdots, ({\mathbf{x}}_1, {\mathbf{l}}_1)\} \in (\mathcal{X} \times \mathcal{L})^n$$
+\begin{block}{Model and prediction}
+Given a user's feature $\mathbf{x}$, to identify which of the labeled groups $\mathcal{L}$ she/he belongs to.
+$$\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$$
+\end{block}
+
+\pause
+
+\begin{block}{Model training}
+To infer a $\textbf{vector-valued}$ function $\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$ from a data set
+$$\mathcal{D} = \{({\mathbf{x}}_1, {\mathbf{l}}_1), \cdots, ({\mathbf{x}}_n, {\mathbf{l}}_n)\} \in (\mathcal{X} \times \mathcal{L})^n$$
 where $\mathbf{x} \in \mathcal{R}^d$ and $\mathbf{l} \in {\{+1,-1\}}^L$.
+\end{block}
 \end{frame}
 
 \begin{frame}
 \frametitle{Naive方案}
-\begin{block}{}
-To produce the vector-valued function $g : \mathcal{X} \rightarrow \mathcal{L}$, let's train a vector of \textit{binary} classifiers, each predicts the corresponding label.
-\end{block}
 
-\begin{block}{}
+To produce the vector-valued function $\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$, let's train a vector of $\|\mathcal{L}\|$ \textit{binary} classifiers. So each one predicts the corresponding label.
+
+One-versus-all implemented in LibSVM, scikit-learn, etc.
+
+\pause
+
 \begin{itemize}
-\item + reuses existing techniques
-\item + easy validation
-\item - inefficient
-\item - not (\textit{economically}) scalable
+\item 使用已有技术 {  \color{green} \checkmark}
+  \begin{itemize}
+  \item LR, SVM in Spark MLLib
+  \end{itemize}
+\item 易于验证 {  \color{green} \checkmark}
+\item - not (\textit{economically}) scalable  {  \color{red} $\times$}
+  \begin{itemize}
+  \item num of labels: 10s $\rightarrow$ 10000s 
+  \item 逐个训练低效、时间长
+  \end{itemize}
 \end{itemize}
-\end{block}
 \end{frame}
 
+\begin{frame}
+\frametitle{Scalable方案}
+\begin{itemize}
+
+\item Multi-label classification
+  \begin{itemize}
+    \item 目标函数：0-1 loss $\mathcal{Z}_{0-1} = \frac{1}{\|\mathfrak{D}\|} \sum_{i} \frac{1}{\|\mathfrak{L}\|} \sum_{l} \mathfrak{I} [ \mathcal{F}(\mathbf{x}_i)_l \neq \mathbf{y}_{i,l} ]$
+    \item TODO
+    \item TODO
+  \end{itemize}
+
+\pause
+
+\item 为什么不用Clustering
+  \begin{itemize}
+    \item Cluster结果 $\neq$  pre-defined labels
+    \item 但可以作为user feature
+  \end{itemize}
+\end{itemize}
+\end{frame}
+
+\begin{frame}
+\frametitle{目标函数}
+
+Weighted Hamming loss: 
+
+$$$$
+
+\end{frame}
 
 \subsection{Preliminary: Boosting}
 
 \begin{frame}
 \frametitle{Preliminary: Boosting}
 \begin{itemize}
-\item Originally for binary classification
-\item A sequence of learners each corrects the mis-classification by preceding ones
-\item by training against a (\textit{re-})weighted sample set:
+\item A sequence of learners each corrects the mis-classification by preceding ones,
+\item trained against a (\textit{re-})weighted sample set.
 \end{itemize}
 \end{frame}
 
@@ -318,15 +362,15 @@ To produce the vector-valued function $g : \mathcal{X} \rightarrow \mathcal{L}$,
 \subsection{Multi-label boosting}
 
 \begin{frame}
-\frametitle{Multi-Label Boosting: An efficient solution}
-\begin{block}{The decomposition}
-  Decompose the general vector-valued function $\mathfrak{g}$ into a \textit{label independent} scalar function to \textbf{split the input space} and a \textit{feature independent} vector-valued function to \textbf{cast the labels}.
-\end{block}
+\frametitle{Multi-Label Boosting}
 
-\begin{block}{Boosting}
-The weights $\mathbf{D}$ in AdaBoost are extended to each sample-label pair:
+The weights $\mathbf{D}$ in \textit{AdaBoost} are extended to each sample-label pair:
 $${\Sigma}_{i,l} D(i, l) = 1$$
-\end{block}
+
+
+  Decompose the general vector-valued function $\mathfrak{g}$ into a \textit{label independent} scalar function to \textbf{split the input space} and a \textit{feature independent} vector-valued function to \textbf{cast the labels}.
+
+$$\mathcal{H}(\mathbf{x}) = \alpha  \phi(\mathbf{x}) \mathbf{v}$$
 
 \end{frame}
 
