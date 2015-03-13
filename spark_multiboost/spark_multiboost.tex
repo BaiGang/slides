@@ -245,7 +245,7 @@
 \pause
 
 \begin{block}{}
-我们实际要解决的问题：如何给用户加\textbf{对应的标签}？
+我们要解决的实际问题：如何给用户加对应的标签？
 \end{block}
 \end{frame}
 
@@ -261,7 +261,7 @@
 \begin{frame}
 \frametitle{问题抽象}
 \begin{block}{Model and prediction}
-Given a user's feature $\mathbf{x}$, to identify which of the labeled groups $\mathcal{L}$ she/he belongs to.
+根据给出的user feature$\mathbf{x}$，输出符合这一user兴趣的标签集合$\mathcal{L}$.
 $$\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$$
 \end{block}
 
@@ -270,26 +270,28 @@ $$\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$$
 \begin{block}{Model training}
 To infer a $\textbf{vector-valued}$ function $\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$ from a data set
 $$\mathcal{D} = \{({\mathbf{x}}_1, {\mathbf{l}}_1), \cdots, ({\mathbf{x}}_n, {\mathbf{l}}_n)\} \in (\mathcal{X} \times \mathcal{L})^n$$
-where $\mathbf{x} \in \mathcal{R}^d$ and $\mathbf{l} \in {\{+1,-1\}}^L$.
+, where $\mathbf{x} \in \mathcal{R}^d$ and $\mathbf{l} \in {\{+1,-1\}}^L$, by minimizing \textbf{Hamming loss}:
+$$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=1}^{\|\mathcal{D}\|} \sum_{l=1}^{\|\mathcal{L}\|} \mathfrak{I} [ \mathcal{F}(\mathbf{x}_i)_l \neq \mathbf{y}_{i,l} ]$$
 \end{block}
 \end{frame}
 
 \begin{frame}
-\frametitle{Naive方案}
+\frametitle{Multi-Label classification: Naive方案}
 
-To produce the vector-valued function $\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$, let's train a vector of $\|\mathcal{L}\|$ \textit{binary} classifiers. So each one predicts the corresponding label.
+为了得到这个vector-valued function $\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$, let's train a vector of $\|\mathcal{L}\|$ \textit{binary} classifiers. So each one predicts the corresponding label.
 
-One-versus-all implemented in LibSVM, scikit-learn, etc.
+* {\small \color{gray} One-versus-all implemented in LibSVM, scikit-learn, etc.}
 
 \pause
 
+优缺点：
 \begin{itemize}
 \item 使用已有技术 {  \color{green} \checkmark}
   \begin{itemize}
-  \item LR, SVM in Spark MLLib
+  \item LR, SVM 等二分类模型
   \end{itemize}
 \item 易于验证 {  \color{green} \checkmark}
-\item - not (\textit{economically}) scalable  {  \color{red} $\times$}
+\item Not (\textit{economically}) scalable  {  \color{red} $\times$}
   \begin{itemize}
   \item num of labels: 10s $\rightarrow$ 10000s 
   \item 逐个训练低效、时间长
@@ -298,18 +300,16 @@ One-versus-all implemented in LibSVM, scikit-learn, etc.
 \end{frame}
 
 \begin{frame}
-\frametitle{Scalable方案}
-\begin{itemize}
-
-\item Multi-label classification
+\frametitle{Multi-label classification: Scalable方案}
+目标：
   \begin{itemize}
-    \item 目标函数：0-1 loss $\mathcal{Z}_{0-1} = \frac{1}{\|\mathfrak{D}\|} \sum_{i} \frac{1}{\|\mathfrak{L}\|} \sum_{l} \mathfrak{I} [ \mathcal{F}(\mathbf{x}_i)_l \neq \mathbf{y}_{i,l} ]$
-    \item TODO
-    \item TODO
+    \item 模型本身的输出就是多标签结果；
+    \item 训练过程是最小化Hamming loss.
+    \item Scalable.
   \end{itemize}
-
 \pause
 
+\begin{itemize}
 \item 为什么不用Clustering
   \begin{itemize}
     \item Cluster结果 $\neq$  pre-defined labels
@@ -319,7 +319,29 @@ One-versus-all implemented in LibSVM, scikit-learn, etc.
 \end{frame}
 
 \begin{frame}
-\frametitle{目标函数}
+\frametitle{Multi-label classification: Scalable方案}
+目标：
+  \begin{itemize}
+    \item 模型本身的输出就是多标签结果；
+    \item 训练过程是最小化Hamming loss.
+    \item Scalable.
+  \end{itemize}
+
+方案：
+  {
+    \setbeamertemplate{itemize items}[square]
+    \begin{itemize}
+      \item {\color{purple} "Improved Boosting Algorithm Using Confidence-Rated Predictions", Schapire \& Singer, 1999.} \\
+      \item {\color{purple} "The return of AdaBoost.MH: multi-class Hamming trees", Kegl, 2014.} \\
+      \item {\color{purple} MultiBoost, http://multiboost.org}
+    \end{itemize}
+  }
+\end{frame}
+
+
+
+\begin{frame}
+\frametitle{Multi-label classification: 目标函数}
 
 Weighted Hamming loss: 
 
@@ -334,6 +356,13 @@ $$$$
 \begin{itemize}
 \item A sequence of learners each corrects the mis-classification by preceding ones,
 \item trained against a (\textit{re-})weighted sample set.
+\end{itemize}
+
+\begin{figure}
+\includegraphics[width=.5\linewidth]{img/boosting.png}
+\end{figure}
+\begin{itemize}
+\item An additive model. $H(\mathbf{x}) = \sum_i^T \alpha_i h_i(\mathbf{x})$
 \end{itemize}
 \end{frame}
 
