@@ -335,7 +335,7 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
       \item {\color{purple} "The return of AdaBoost.MH: multi-class Hamming trees", Kegl, 2014.}
       \begin{itemize}
         \item Factorization of base learners in AdaBoost.MH.
-        \item 提出decision stump \& Hamming tree作为base learner.
+        \item Decision stump \& Hamming tree作为base learner.
       \end{itemize}
       \item {\color{purple} MultiBoost, http://multiboost.org}
       \begin{itemize}
@@ -352,8 +352,8 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 \frametitle{Preliminary: Boosting}
 \begin{itemize}
 \item An additive model. $H(\mathbf{x}) = \sum_i^T \alpha_i h_i(\mathbf{x})$
-\item A sequence of learners each corrects the mis-classification by preceding ones,
-\item trained against a (\textit{re-})weighted sample set.
+\item 迭代的在一个 (\textit{re-})weighted sample set上去训练，
+\item 通过reweighting，每次训练一个新模型去重点fix前一个模型分类错了的样本
 \end{itemize}
 
 \begin{figure}
@@ -362,7 +362,7 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 \end{frame}
 
 \begin{frame}
-\frametitle{Adaptive Boosting}
+\frametitle{Preliminary: Adaptive Boosting}
 
 \begin{algorithm}[H]
 \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
@@ -387,47 +387,49 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 
 \begin{frame}
 \frametitle{AdaBoost.MH}
-
-The weights $\mathbf{D}$ in \textit{AdaBoost} are extended to each sample-label pair:
-$${\Sigma}_{i,l} D(i, l) = 1$$
-
-
-  Decompose the general vector-valued function $\mathfrak{g}$ into a \textit{label independent} scalar function to \textbf{split the input space} and a \textit{feature independent} vector-valued function to \textbf{cast the labels}.
-
-$$\mathcal{H}(\mathbf{x}) = \alpha  \phi(\mathbf{x}) \mathbf{v}$$
-
-\end{frame}
-
-\begin{frame}
-\frametitle{AdaBoost.MH}
 \begin{block}{}
 \textbf{MH}: \textbf{M}ulti-class with \textbf{H}amming loss.
 \end{block}
+To produce a \textbf{vector-valued} discriminant function $\mathbf{f}^{(T)} : \mathcal{R}^d \rightarrow \mathcal{R}^K$ with a small Hamming loss $\hat{R}_H (\mathbf{f}^{(T)}, \mathbf{W})$ by minimizing the \textit{weighted multi-class exponential margin-based error}
+$$\hat{R}_{EXP}(\mathbf{f}^{(T)}, \mathbf{W}) = \frac{1}{mK} {{\Sigma}_{i=1}^m} {{\Sigma}_{l=1}^K} {\mathbf{W}_{i,l}\exp(- f_l^{(T)} y_{i,l})}$$
 
-To produce a vector-valued discriminant function $\mathbf{f}^{(T)} : \mathcal{R}^d \rightarrow \mathcal{R}^K$ with a small Hamming loss $\hat{R}_H (\mathbf{f}^{(T)}, \mathbf{D})$ by minimizing the \textit{weighted multi-class exponential margin-based error}
-$$\hat{R}_{EXP}(\mathbf{f}^{(T)}, \mathbf{D}) = \frac{1}{mK} {{\Sigma}_{i=1}^m} {{\Sigma}_{l=1}^K} {w_{i,l}\exp(- f_l^{(T)} y_{i,l})}$$
+The weights $\mathbf{W}$:
+$${\Sigma}_{i,l} Wi_{i, l} = 1$$
+\end{frame}
 
+\begin{frame}
+\frametitle{Exponential loss vs Hamming loss}
+\begin{itemize}
+\item Exponential loss "upper-bounds" Hamming loss.
+  \begin{itemize}
+    \item Minimizing exp loss is minimizing Hamming loss.
+  \end{itemize}
+\item Exponential loss is convex.
+  \begin{itemize}
+    \item Easy to optimize.
+  \end{itemize}
+\end{itemize}
 
+\begin{figure}
+\includegraphics[width=0.6\textwidth]{img/convex-bounds.png}
+\end{figure}
 
-\begin{block}{}
-Using \textit{decomposed} base learner.
-\end{block}
 \end{frame}
 
 \begin{frame}
 \frametitle{AdaBoost.MH}
 \begin{algorithm}[H]
 \SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
- \Input{$\mathcal{D} = (x_i, y_i) \in \{({\mathcal{R}}^n, \{-1, +1\}^K\}$, $T$, $\mathcal{B}$}
- \Output{$\mathbf{H} = \Sigma_{t=1}^T{{\alpha}_t {\mathbf{v}}_t} {\varphi_t}$}
+ \Input{$\mathcal{D} = (x_i, y_i) \in $ {\color{blue} $\{({\mathcal{R}}^n, \{-1, +1\}^K\}$ }, $T$, $\mathfrak{B}$}
+ \Output{$\mathbf{H} = \Sigma_{t=1}^T{{\alpha}_t {\mathbf{B}}_t} $}
  \Begin{
-   ${\mathbf{D}}_1(i, l) = \frac{1}{mK}$\;
+   {\color{blue} ${\mathbf{W}}_1(i, l) = \frac{1}{mK}$}\;
    \For{$t \leftarrow 1, \cdots, T$}{
-    $(\mathbf{v}_t, \varphi_t, \gamma_t) \leftarrow \mathcal{B}(\mathcal{D}, \mathbf{D}_t)$\;
+    Base learner and the edge: $({\mathcal{B}}_t, \gamma) \leftarrow \mathfrak{B}(\mathcal{D}, \mathbf{W}_t)$\;
     Get hypothesis set: $h_t \leftarrow \mathbf{B}(\mathcal{D})$\;
     Get the base coefficient ${\alpha}_t \leftarrow \frac{1}{2} \exp \frac{1+\gamma}{1-\gamma} $\;
     Update the weights: 
-    $${{\mathbf{D}}_{t+1}}(i,l) = {{{\mathbf{D}}_{t}}(i,l) \exp(- {\alpha}_t y_{i,l} h_t(x_i))} / Z_t $$
+    {\color{blue} $${{\mathbf{W}}_{t+1}}(i,l) = {{{\mathbf{W}}_{t}}(i,l) \exp(- {\alpha}_t y_{i,l} h_t(x_i))} / Z_t $$ }
     where $Z_t$ is a normalization factor\;
    }
  }
@@ -435,86 +437,159 @@ Using \textit{decomposed} base learner.
 \end{frame}
 
 \begin{frame}
-\frametitle{The base learner for AdaBoost.MH}
-\begin{itemize}
-\item How to get $\varphi$, i.e split the input space?
-\item How to cast the labels, i.e produce the vector value using  $\varphi$?
-\item How to calculate the base learner factor $\alpha$?
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Base learning}
-\begin{itemize}
-\item The \textit{weighted per-class error rate}
-$$\mu_{l-} = \sum_{i=1}^{n}w_{i,j}\mathfrak{I}\{\varphi(\mathbf{x}_i) \neq y_{i,l}\}$$
-\item The \textit{weighted per-class correct classification rate}
-$$\mu_{l+} = \sum_{i=1}^{n}w_{i,j}\mathfrak{I}\{\varphi(\mathbf{x}_i) = y_{i,l}\}$$
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Base learning}
-\begin{itemize}
-\item The \textit{class-wise edge} with $\varphi(\bullet) \in \{\pm 1\}$ and $y_{i,l} \in \{\pm 1\}$
-$$\gamma_l = v_l (\mu_{l+} - \mu_{l-}) = \sum_{i=1}^{n} w_{i,l} v_l \varphi(\mathbf{x}_i) y_{i,l}$$
-\item The full multi-class edge of the classifier
-$$\gamma = \gamma(\mathbf{v}, \varphi, \mathbf{W}) = \sum_{l=1}^{K} \gamma_l = \sum_{l=1}^{K} v_l(\mu_{l+} - \mu_{l-})$$
-$$= \sum_{i=1}^{n} \sum_{l=1}^{K} w_{i,l} v_l \varphi(\mathbf{x}_i) y_{i,l} $$
-\end{itemize}
-\end{frame}
-
-\begin{frame}
-\frametitle{Base learning}
-\begin{block}{Given $\varphi(\bullet)$, the votes $\mathbf{v}$}
-which maximize the full edge is
-\[v_l = \left\{
-  \begin{array}{l l}
-  1 \quad \quad \text{   if } \mu_{l+} > \mu_{l-} \\
-  -1 \quad \text{ otherwise }
-  \end{array} \right. \]
-\end{block}
-\begin{block}{$\varphi(\bullet)$ is determined by maximazing the full edge $\gamma$}
-\begin{itemize}
-\item Decision Stump: finding the best split cut
-\item Hamming tree: node split with the max edge improvement
-\item Generalized binary classifier.
-\end{itemize}
-\end{block}
-\end{frame}
-
-\begin{frame}
-\frametitle{Generalized binary classifier as a base learner}
-TODO: 介绍如何使用GBC作为base learner \\
-目标函数是什么，为什么与 edge-maximization 是一致的
+\frametitle{AdaBoost.MH}
+将minimizing exp-loss:
+$$\hat{Z}(\mathbf{f}^{(T)}, \mathbf{W}) = \frac{1}{mK} {{\Sigma}_{i=1}^m} {{\Sigma}_{l=1}^K} {w_{i,l}\exp(- f_l^{(T)} y_{i,l})}$$
+转化成maximizing "the edge":
+$$ \gamma(\mathbf{W}, y, \mathbf{p}) = \Sigma_{i=1}^{n} \Sigma_{l=1}^{L} \mathbf{W}_{i,l} * y_{i,l} * \mathbf{p}_{i, l}$$
+其中，$\mathbf{W}$是权重，$y$是label，$p$是prediction，$p \in \{-1, +1\}$。
 \end{frame}
 
 \begin{frame}
 \frametitle{The base learner factor}
 \begin{block}{The EXP loss:}
-$$Z(\mathbf{h}, \mathbf{W}) = \sum_{i=1}^{n} \sum_{l=1}^{K} w_{i,l} \exp(-\alpha v_l \varphi(\mathbf{x}_i) y_{i,l}) $$
-$$= \frac{e^\alpha + e^{-\alpha}}{2} - \frac{e^\alpha - e^{-\alpha}}{2} \sum_{l=1}^{K} v_l(\mu_{l+} - \mu_{l-})$$
+$$Z(\mathbf{h}, \mathbf{W}) = \sum_{i=1}^{n} \sum_{l=1}^{K} w_{i,l} \exp(-\mathcal{B}_{i,l} y_{i,l}) $$
+$$= \frac{e^\alpha + e^{-\alpha}}{2} - \frac{e^\alpha - e^{-\alpha}}{2} \gamma$$
 \end{block}
 \begin{block}{$\alpha$ minimizing the EXP loss:}
 $$\alpha = \frac{1}{2} \log \frac{1+\gamma}{1-\gamma}$$
 \end{block}
 \end{frame}
 
-%----------------------------------------------------------------------------------------
+\begin{frame}
+\frametitle{Factorization of base learners}
+便于计算$\gamma$，把general vector-valued function $\mathcal{B}$ 分解
+\begin{itemize}
+\item $\varphi(x)$: a \textit{label independent} scalar function
+\begin{itemize}
+  \item 本质上是对\textit{feature space}做划分
+\end{itemize}
+\item $\mathbf{v}$: a \textit{feature independent} vector-valued function
+\begin{itemize}
+  \item 将$\varphi(x)$划分的二元或者多元结果cast到\textit{label space}上
+  \item "output encode"
+\end{itemize}
+\end{itemize}
+
+$$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v})$$
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Base learner training}
+\begin{itemize}
+\item 求$\varphi(x)$：按照什么原则对feature space做划分
+\item 求$\mathbf{v}$：如何最优的"cast to labels"
+
+\pause
+
+\begin{block}{}
+Maximizing "the edge" $\gamma$.
+\end{block}
+
+\pause
+
+\end{itemize}
+      {\color{purple} "The return of AdaBoost.MH: multi-class Hamming trees", Kegl, 2014.}
+{
+  \setbeamertemplate{itemize items}[checkmark]
+  \begin{itemize}
+    \item Tree-based方案：$\varphi(x)$是Decision stump/Hamming tree
+    \item $\mathbf{v}$与$\varphi(x)$同时优化求解
+  \end{itemize}
+}
+\end{frame}
+
+\begin{frame}
+\frametitle{Base learner: the Decision Stump model}
+\begin{itemize}
+\item Decision stump: 一个只有一个结点的分类树
+$$ \varphi_{j,b}(\mathbf{x}) = \left\{
+  \begin{array}{l l}
+    1 & \quad \text{if } \mathbf{x}_j \geq b, \\
+    -1 & \quad \text{otherwise.}
+  \end{array} \right.$$
+\item Hamming Tree
+\begin{itemize}
+  \item Decision stump作为内部结点的树
+\end{itemize}
+\end{itemize}
+\end{frame}
+
+
+\begin{frame}
+\frametitle{Base learning}
+
+"Edge" $\gamma$ 是 per-class edge的和。
+$$\gamma = \Sigma_l \gamma_l, \gamma_l = \Sigma_{i=1}^n \mathbf{W}_{i,l} \mathbf{p}_{i,l} y_{i,l} $$
+$$ \gamma_l = \Sigma_{i=1}^{n}\mathbf{W}_{i,l}\mathfrak{I}\{\mathbf{p}_{i,l} = y_{i,l}\} - \Sigma_{i=1}^{n}\mathbf{W}_{i,l}\mathfrak{I}\{\mathbf{p}_{i,l} \neq y_{i,l}\} $$
+
+\pause
+
+The \textit{weighted per-class error rate}
+$$\mu_{l-} = \sum_{i=1}^{n}w_{i,j}\mathfrak{I}\{\varphi(\mathbf{x}_i) \neq y_{i,l}\}$$
+The \textit{weighted per-class correct classification rate}
+$$\mu_{l+} = \sum_{i=1}^{n}w_{i,j}\mathfrak{I}\{\varphi(\mathbf{x}_i) = y_{i,l}\}$$
+
+\pause
+
+$$\gamma_l = \mu_{l+} - \mu_{l-}$$
+
+\end{frame}
+
+\begin{frame}
+\frametitle{Base learning}
+
+\begin{block}{Find $\varphi(\bullet)$ by maximazing the full edge $\gamma$}
+\begin{itemize}
+\item Decision Stump: finding the best split cut
+\item Hamming tree: node split with the max edge improvement
+\item Generalized binary classifier.
+\end{itemize}
+\end{block}
+
+\begin{block}{Given $\varphi(\bullet)$, set the votes vector $\mathbf{v}$}
+$\mathbf{v}$ maximizing the full edge is:
+\[v_l = \left\{
+  \begin{array}{l l}
+  1 \quad \quad \text{   if } \mu_{l+} > \mu_{l-} \\
+  -1 \quad \text{ otherwise }
+  \end{array} \right. \]
+\end{block}
+
+\end{frame}
 
 \section{Multiboost on Spark}
 
-\subsection{实现方案}
+\subsection{Base learner: Decision Stump}
 
 \begin{frame}
-\frametitle{MultiBoost on Spark}
-\begin{itemize}
-\item Base learner如何实现
-\item Strong learner实现方式
-\item https://github.com/BaiGang/spark\_multiboost
-\item 'Fork and Star' are welcome!
-\end{itemize}
+\frametitle{Decision stump}
 \end{frame}
+
+\begin{frame}
+\frametitle{Decision stump on Apache Spark}
+\end{frame}
+
+\subsection{Base learner: generalized binary classifier with vote vector}
+
+\begin{frame}
+\frametitle{Generalized binary classifier as $\varphi(\dot)$}
+\end{frame}
+
+\begin{frame}
+\frametitle{Generalized binary $\varphi$ on Apache Spark}
+\end{frame}
+
+
+\subsection{Strong learner: Iterative runner}
+
+\begin{frame}
+\frametitle{Strong learner}
+
+\end{frame}
+
+%----------------------------------------------------------------------------------------
 
 \subsection{实验与效果}
 
@@ -542,12 +617,14 @@ TODO: 对应数据集的训练时间长度
 \subsection{后续工作}
 
 \begin{frame}
-\frametitle{MultiBoost on Spark}
+\frametitle{后续工作}
 \begin{itemize}
-\item Base learner使用二分类，与edge-maximizing目标，需要数学证明
-\item Hamming tree作为base learner
+\item 使用LR、SVM作为$\varphi$，其loss与edge-maximizing目标一致需要理论证明
+\item 训练数据中允许有missing data
 \item 现有时间基于Spark 1.1.x, 应用新的spark ml interface
-\item 'Fork and Star' are welcome!
+  \begin{itemize}
+    \item $\star \star \star$ 欢迎'Fork and Star'！
+  \end{itemize}
 \end{itemize}
 \end{frame}
 
