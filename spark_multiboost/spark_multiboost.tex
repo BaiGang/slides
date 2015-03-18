@@ -91,11 +91,20 @@
 \usepackage{graphicx} % Allows including images
 \usepackage{booktabs} % Allows the use of \toprule, \midrule and \bottomrule in tables
 \usepackage{algorithm2e}
+%\usepackage{minted}
 \usepackage{fontspec}
 \usepackage{xeCJK}
+%\usepackage[scaled=0.9]{helvet}
+\usepackage{courier}
+\usepackage[export]{adjustbox}
 
 \setCJKmainfont[BoldFont=STHeiti,ItalicFont=STFangsong]{STKaiti}
-\hypersetup{colorlinks=false}
+
+\definecolor{links}{HTML}{2A1B81}
+\hypersetup{colorlinks,linkcolor=,urlcolor=links}
+
+\DeclareMathOperator*{\argmin}{arg\,min}
+\DeclareMathOperator*{\argmax}{arg\,max}
 
 %----------------------------------------------------------------------------------------
 %	TITLE PAGE
@@ -104,7 +113,7 @@
 \title[MultiBoost]{Multi-Label Classification with Boosting \\ on Apache Spark} 
 
 \author{
-白刚  \href{http://weibo.com/baigang111}{@BaiGang-}
+白刚  (\href{http://weibo.com/baigang111}{@BaiGang-})
 } % Your name
 \institute[Sina] % Your institution as it will appear on the bottom of every slide, may be shorthand to save space
 {
@@ -121,11 +130,14 @@
 
 \begin{frame}
 \frametitle{关于这一文档}
-\begin{itemize}
-\item TODO: 自我介绍
-\item \LaTeX Beamer presentation. 
-\item \url{https://github.com/baigang/slides}
-\end{itemize}
+“抛砖引玉”，期待后续的讨论。 \\ \ \\
+
+\LaTeX\  Beamer presentation.  \\
+\url{https://github.com/baigang/slides/spark_multiboost} \\ \ \\
+
+About me: \\
+BUAA $\rightarrow$ Yahoo! $\rightarrow$ OneBox search (360 so.com) $\rightarrow$ Sina/Weibo.
+
 \end{frame}
 
 \begin{frame}
@@ -261,7 +273,7 @@
 \begin{frame}
 \frametitle{问题抽象}
 \begin{block}{Model and prediction}
-根据给出的user feature $\mathbf{x}$，输出符合其兴趣的标签集合$\mathcal{L}$.
+根据给出的user feature $\mathbf{x}$，输出符合其兴趣的标签集合$\mathit{L}$.
 $$\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$$
 \end{block}
 
@@ -269,9 +281,9 @@ $$\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$$
 
 \begin{block}{Model training}
 To infer a $\textbf{vector-valued}$ function $\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$ from a data set
-$$\mathcal{D} = \{({\mathbf{x}}_1, {\mathbf{l}}_1), \cdots, ({\mathbf{x}}_n, {\mathbf{l}}_n)\} \in (\mathcal{X} \times \mathcal{L})^n$$
-, where $\mathbf{x} \in \mathcal{R}^d$ and $\mathbf{l} \in {\{+1,-1\}}^L$, by minimizing \textbf{Hamming loss}:
-$$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=1}^{\|\mathcal{D}\|} \sum_{l=1}^{\|\mathcal{L}\|} \mathfrak{I} [ \mathcal{F}(\mathbf{x}_i)_l \neq \mathbf{y}_{i,l} ]$$
+$$\mathcal{D} = \{({\mathbf{x}}_1, {\mathbf{l}}_1), \cdots, ({\mathbf{x}}_m, {\mathbf{l}}_m)\} \in (\mathcal{X} \times \mathcal{L})$$
+, where $\mathbf{x} \in \mathbb{R}^n$ and $\mathbf{l} \in {\{+1,-1\}}^L$, by minimizing \textbf{Hamming loss}:
+$$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=1}^{\|\mathcal{D}\|} \sum_{l=1}^{\|\mathcal{L}\|} \mathcal{I} [ \mathit{F}(\mathbf{x}_i)_l \neq \mathbf{y}_{i,l} ]$$
 \end{block}
 \end{frame}
 
@@ -288,7 +300,7 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 \end{frame}
 
 \begin{frame}
-\frametitle{Multi-Label classification: Naive方案}
+\frametitle{Multi-Label classification: Per-label bin-classification}
 
 为了得到这个vector-valued function $\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$, 我们为每个$\mathit{l} \in \mathcal{L}$ 都训练一个\textit{binary} classifier，预测时将判断每一个标签的结果。
 
@@ -345,7 +357,6 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
   }
 \end{frame}
 
-
 \subsection{Preliminary: Boosting}
 
 \begin{frame}
@@ -353,7 +364,7 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 \begin{itemize}
 \item An additive model. $H(\mathbf{x}) = \sum_i^T \alpha_i h_i(\mathbf{x})$
 \item 迭代的在一个 (\textit{re-})weighted sample set上去训练，
-\item 通过reweighting，每次训练一个新模型去重点fix前一个模型分类错了的样本
+\item 通过reweighting，每次训练一个新模型去重点fix前一个模型分类错了的样本。
 \end{itemize}
 
 \begin{figure}
@@ -390,11 +401,11 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 \begin{block}{}
 \textbf{MH}: \textbf{M}ulti-class with \textbf{H}amming loss.
 \end{block}
-To produce a \textbf{vector-valued} discriminant function $\mathbf{f}^{(T)} : \mathcal{R}^d \rightarrow \mathcal{R}^K$ with a small Hamming loss $\hat{R}_H (\mathbf{f}^{(T)}, \mathbf{W})$ by minimizing the \textit{weighted multi-class exponential margin-based error}
-$$\hat{R}_{EXP}(\mathbf{f}^{(T)}, \mathbf{W}) = \frac{1}{mK} {{\Sigma}_{i=1}^m} {{\Sigma}_{l=1}^K} {\mathbf{W}_{i,l}\exp(- f_l^{(T)} y_{i,l})}$$
+To produce a \textbf{vector-valued} discriminant function $\mathcal{F} : \mathcal{R}^n \rightarrow \mathcal{R}^K$ with a small \textbf{Hamming loss} $\hat{R}_H (\mathcal{F}, \mathbf{W})$ by minimizing the \textbf{weighted multi-class exponential margin-based error}
+$$\hat{R}_{EXP}(\mathcal{F}, \mathbf{W}) = \frac{1}{mK} {{\Sigma}_{i=1}^m} {{\Sigma}_{l=1}^K} {\mathbf{W}_{i,l}\exp(- f_l^{(T)} y_{i,l})}$$
 
 The weights $\mathbf{W}$:
-$${\Sigma}_{i,l} Wi_{i, l} = 1$$
+$${\Sigma}_{i,l} \mathbf{W}_{i, l} = 1$$
 \end{frame}
 
 \begin{frame}
@@ -427,7 +438,28 @@ $${\Sigma}_{i,l} Wi_{i, l} = 1$$
    \For{$t \leftarrow 1, \cdots, T$}{
     Base learner and the edge: $({\mathcal{B}}_t, \gamma) \leftarrow \mathfrak{B}(\mathcal{D}, \mathbf{W}_t)$\;
     Get hypothesis set: $h_t \leftarrow \mathbf{B}(\mathcal{D})$\;
-    Get the base coefficient ${\alpha}_t \leftarrow \frac{1}{2} \exp \frac{1+\gamma}{1-\gamma} $\;
+    Get the base coefficient ${\alpha}_t \leftarrow \frac{1}{2} \log \frac{1+\gamma}{1-\gamma} $\;
+    Update the weights: 
+    {\color{blue} $${{\mathbf{W}}_{t+1}}(i,l) = {{{\mathbf{W}}_{t}}(i,l) \exp(- {\alpha}_t y_{i,l} h_t(x_i))} / Z_t $$ }
+    where $Z_t$ is a normalization factor\;
+   }
+ }
+\end{algorithm}
+\end{frame}
+
+%% this frame highlights the coefficient \alpha to introduce ``edge'' and base learner factor.
+\begin{frame}
+\frametitle{AdaBoost.MH}
+\begin{algorithm}[H]
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+ \Input{$\mathcal{D} = (x_i, y_i) \in $ {\color{blue} $\{({\mathcal{R}}^n, \{-1, +1\}^K\}$ }, $T$, $\mathfrak{B}$}
+ \Output{$\mathbf{H} = \Sigma_{t=1}^T{{\alpha}_t {\mathbf{B}}_t} $}
+ \Begin{
+   {\color{blue} ${\mathbf{W}}_1(i, l) = \frac{1}{mK}$}\;
+   \For{$t \leftarrow 1, \cdots, T$}{
+    Base learner and the edge: $({\mathcal{B}}_t, {\color{purple} \gamma}) \leftarrow \mathfrak{B}(\mathcal{D}, \mathbf{W}_t)$\;
+    Get hypothesis set: $h_t \leftarrow \mathbf{B}(\mathcal{D})$\;
+    Get the base coefficient {\color{purple} ${\alpha}_t \leftarrow \frac{1}{2} \log \frac{1+\gamma}{1-\gamma} $}\;
     Update the weights: 
     {\color{blue} $${{\mathbf{W}}_{t+1}}(i,l) = {{{\mathbf{W}}_{t}}(i,l) \exp(- {\alpha}_t y_{i,l} h_t(x_i))} / Z_t $$ }
     where $Z_t$ is a normalization factor\;
@@ -437,42 +469,93 @@ $${\Sigma}_{i,l} Wi_{i, l} = 1$$
 \end{frame}
 
 \begin{frame}
-\frametitle{AdaBoost.MH}
-将minimizing exp-loss:
-$$\hat{Z}(\mathbf{f}^{(T)}, \mathbf{W}) = \frac{1}{mK} {{\Sigma}_{i=1}^m} {{\Sigma}_{l=1}^K} {w_{i,l}\exp(- f_l^{(T)} y_{i,l})}$$
-转化成maximizing "the edge":
-$$ \gamma(\mathbf{W}, y, \mathbf{p}) = \Sigma_{i=1}^{n} \Sigma_{l=1}^{L} \mathbf{W}_{i,l} * y_{i,l} * \mathbf{p}_{i, l}$$
-其中，$\mathbf{W}$是权重，$y$是label，$p$是prediction，$p \in \{-1, +1\}$。
+\frametitle{The base learner factor $\alpha$}
+$$\begin{array}{c}
+\hat{R}_{EXP}(\alpha, \mathbf{h}, \mathbf{W}) = \sum_{i=1}^{n} \sum_{l=1}^{K} w_{i,l} \exp(-\alpha \mathbf{h}_{i,l} y_{i,l}) \\
+ = \sum_{i=1}^{n} \sum_{l=1}^{K} w_{i,l}(\mathcal{I}_+ e^{-\alpha} + \mathcal{I}_- e^{\alpha})
+ \end{array},$$
+$$\text{with } \mathcal{I}_+ = \mathcal{I}[y_{i,l} \mathbf{h}_{i,l} > 0], \mathcal{I}_- = \mathcal{I}[y_{i,l} \mathbf{h}_{i,l} > 0]. $$
+\pause
+Re-phrasing the EXP loss:
+$$\begin{array}{c}
+\hat{R}_{EXP}(\alpha, \mathbf{h}, \mathbf{W}) = \sum_{i=1}^{n} \sum_{l=1}^{K} w_{i,l}[ \\
+  \frac{1}{2}(\mathcal{I}_+ e^{-\alpha} +\mathcal{I}_- e^{\alpha} + \mathcal{I}_+ e^{\alpha} + \mathcal{I}_- e^{-\alpha}) \\
+  + \frac{1}{2}(\mathcal{I}_+ e^{-\alpha} + \mathcal{I}_- e^{\alpha} - \mathcal{I}_+ e^{\alpha} - \mathcal{I}_- e^{-\alpha})] \\
+= \frac{e^\alpha + e^{-\alpha}}{2}\sum_{i=1}^{n} \sum_{l=1}^{K}\mathbf{W}_{i,j}(\mathcal{I}_+ + \mathcal{I}_-) \\
+  - \frac{e^\alpha - e^{-\alpha}}{2}\sum_{i=1}^{n}\sum_{l=1}^{K}\mathbf{W}_{i,j}(\mathcal{I}_+ - \mathcal{I}_-) 
+ \end{array} $$
 \end{frame}
 
 \begin{frame}
-\frametitle{The base learner factor}
-\begin{block}{The EXP loss:}
-$$Z(\mathbf{h}, \mathbf{W}) = \sum_{i=1}^{n} \sum_{l=1}^{K} w_{i,l} \exp(-\mathcal{B}_{i,l} y_{i,l}) $$
-$$= \frac{e^\alpha + e^{-\alpha}}{2} - \frac{e^\alpha - e^{-\alpha}}{2} \gamma$$
+\frametitle{The base learner factor $\alpha$}
+The edge $\gamma$，描述加权重之后的正确率与错误率的差。 \\
+$$ \gamma(\mathbf{W}, y, \mathbf{h}) = \Sigma_{i=1}^{n} \Sigma_{l=1}^{L} (\mathbf{W}_{i,l} \mathcal{I}_+ - \mathbf{W}_{i,l}\mathcal{I}_-)$$
+\begin{block}{Exponential loss with $\gamma$:}
+$$ \begin{array}{c}
+\hat{R}_{EXP} = \frac{e^\alpha + e^{-\alpha}}{2}\sum_{i=1}^{n} \sum_{l=1}^{K}\mathbf{W}_{i,l}(\mathcal{I}_+ + \mathcal{I}_-) \\
+ - \frac{e^\alpha - e^{-\alpha}}{2}\sum_{i=1}^{n}\sum_{l=1}^{K}\mathbf{W}_{i,l}(\mathcal{I}_+ - \mathcal{I}_-) \\
+ = \frac{e^\alpha + e^{-\alpha}}{2} + \frac{e^\alpha - e^{-\alpha}}{2}\gamma.
+\end{array} $$
 \end{block}
+$$\text{N.B,   } \sum_{i=1}^{n} \sum_{l=1}^{K}\mathbf{W}_{i,l}(\mathcal{I}_+ + \mathcal{I}_-) = 1$$
+\end{frame}
+
+
+\begin{frame}
+\frametitle{The base learner factor $\alpha$}
 \begin{block}{$\alpha$ minimizing the EXP loss:}
+$$\frac{\partial Z(\alpha, \mathbf{h}, \mathbf{W})}{\partial \alpha} = 0$$
 $$\alpha = \frac{1}{2} \log \frac{1+\gamma}{1-\gamma}$$
 \end{block}
+
+\pause
+
+\begin{block}{EXP loss becomes:}
+$$Z(\gamma) = \sqrt{1 - \gamma^2}$$
+最大化 edge 就是最小化 exponential loss.
+\end{block}
+
+\end{frame}
+
+%% this frame highlights base learner algo to train the model
+\begin{frame}
+\frametitle{AdaBoost.MH}
+\begin{algorithm}[H]
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+ \Input{$\mathcal{D} = (x_i, y_i) \in $ {\color{blue} $\{({\mathcal{R}}^n, \{-1, +1\}^K\}$ }, $T$, $\mathfrak{B}$}
+ \Output{$\mathbf{H} = \Sigma_{t=1}^T{{\alpha}_t {\mathbf{B}}_t} $}
+ \Begin{
+   {\color{blue} ${\mathbf{W}}_1(i, l) = \frac{1}{mK}$}\;
+   \For{$t \leftarrow 1, \cdots, T$}{
+    Base learner and the edge: {\color{purple} $({\mathcal{B}}_t, \gamma) \leftarrow \mathfrak{B}(\mathcal{D}, \mathbf{W}_t)$}\;
+    Get hypothesis set: $h_t \leftarrow \mathbf{B}(\mathcal{D})$\;
+    Get the base coefficient {\color{blue} ${\alpha}_t \leftarrow \frac{1}{2} \log \frac{1+\gamma}{1-\gamma} $}\;
+    Update the weights: 
+    {\color{blue} $${{\mathbf{W}}_{t+1}}(i,l) = {{{\mathbf{W}}_{t}}(i,l) \exp(- {\alpha}_t y_{i,l} h_t(x_i))} / Z_t $$ }
+    where $Z_t$ is a normalization factor\;
+   }
+ }
+\end{algorithm}
 \end{frame}
 
 \begin{frame}
 \frametitle{Factorization of base learners}
-便于计算$\gamma$，把general vector-valued function $\mathcal{B}$ 分解
+
+{\color{purple} "The return of AdaBoost.MH: multi-class Hamming trees", Kegl, 2014.}
+把general vector-valued function $\mathcal{B}$ 分解
 \begin{itemize}
-\item $\varphi(x)$: a \textit{label independent} scalar function
-\begin{itemize}
-  \item 本质上是对\textit{feature space}做划分
-\end{itemize}
+\item $\varphi(x)$: a \textit{label independent} binary classifier 
+  \begin{itemize}
+    \item 本质上是对\textit{feature space}做划分
+  \end{itemize}
 \item $\mathbf{v}$: a \textit{feature independent} vector-valued function
-\begin{itemize}
-  \item 将$\varphi(x)$划分的二元或者多元结果cast到\textit{label space}上
-  \item "output encode"
+  \begin{itemize}
+    \item 将$\varphi(x)$划分的${\pm 1}$结果cast到\textit{label space} $\{\pm 1\}^K$上
+  \end{itemize}
 \end{itemize}
-\end{itemize}
-
-$$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v})$$
-
+\begin{block}{}
+$$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v}$$
+\end{block}
 \end{frame}
 
 \begin{frame}
@@ -480,28 +563,100 @@ $$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v})$$
 \begin{itemize}
 \item 求$\varphi(x)$：按照什么原则对feature space做划分
 \item 求$\mathbf{v}$：如何最优的"cast to labels"
-
-\pause
-
-\begin{block}{}
-Maximizing "the edge" $\gamma$.
-\end{block}
-
-\pause
-
 \end{itemize}
-      {\color{purple} "The return of AdaBoost.MH: multi-class Hamming trees", Kegl, 2014.}
+
+\pause
+
+\begin{block}{ }
+Minimizing the loss $R_{EXP}$ i.e Maximizing "the edge" $\gamma$.
+ $$\varphi(\mathbf{x}), \mathbf{v} = \argmax_{\varphi(\cdot), \mathbf{v}} \gamma(\mathbf{W}, y, \mathbf{h}(\varphi(\cdot), \mathbf{v}))$$
+\end{block}
+\end{frame}
+
+
+%% this frame highlights everything we need to train the model
+\begin{frame}
+\frametitle{AdaBoost.MH}
+\begin{algorithm}[H]
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+ \Input{$\mathcal{D} = (x_i, y_i) \in $ {\color{blue} $\{({\mathcal{R}}^n, \{-1, +1\}^K\}$ }, $T$, $\mathfrak{B}$}
+ \Output{$\mathbf{H} = \Sigma_{t=1}^T{{\alpha}_t {\mathbf{B}}_t} $}
+ \Begin{
+   {\color{blue} ${\mathbf{W}}_1(i, l) = \frac{1}{mK}$}\;
+   \For{$t \leftarrow 1, \cdots, T$}{
+    Base learner and the edge: {\color{blue} $({\mathcal{B}}_t, \gamma) \leftarrow \mathfrak{B}(\mathcal{D}, \mathbf{W}_t)$}\;
+    Get hypothesis set: $h_t \leftarrow \mathbf{B}(\mathcal{D})$\;
+    Get the base coefficient {\color{blue} ${\alpha}_t \leftarrow \frac{1}{2} \log \frac{1+\gamma}{1-\gamma} $}\;
+    Update the weights: 
+    {\color{blue} $${{\mathbf{W}}_{t+1}}(i,l) = {{{\mathbf{W}}_{t}}(i,l) \exp(- {\alpha}_t y_{i,l} h_t(x_i))} / Z_t $$ }
+    where $Z_t$ is a normalization factor\;
+   }
+ }
+\end{algorithm}
+\end{frame}
+
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+%
+%  Model training on Apache Spark
+%
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+\section{Multiboost on Spark}
+
+\begin{frame}
+\frametitle{Overview} % Table of contents slide, comment this block out to remove it
+\tableofcontents[currentsection] % Throughout your presentation, if you choose to use \section{} and \subsection{} commands, these will automatically be printed on this slide as an overview of your presentation
+\end{frame}
+
+\subsection{Strong learner on Apache Spark}
+
+\begin{frame}
+\frametitle{Strong learner on Apache Spark}
+\begin{itemize}
+\item Spark的driver program中实现算法逻辑
+\item Base learner类型作为类型参数
+  \begin{itemize}
+    \item 不同base learner可替换，pluggable
+    \item Base learner的training逻辑与strong learner解耦合
+  \end{itemize}
+\end{itemize}
+{ \footnotesize
+\href{https://github.com/BaiGang/spark_multiboost/blob/master/src/main/scala/org/apache/spark/mllib/classification/multilabel/stronglearners/AdaBoostMH.scala}{https://github.com/...../.../stronglearners/AdaBoostMH.scala}
+}
+\begin{figure}
+\includegraphics[scale=0.5,left]{img/adbm_model_spark.png} \\
+\includegraphics[scale=0.5,left]{img/adbm_algo_spark.png} \\
+\includegraphics[scale=0.5,left]{img/adbm_run.png}
+\end{figure}
+
+\end{frame}
+
+\subsection{Base learner on Apache Spark}
+
+\begin{frame}
+\frametitle{Base learner on Apache Spark}
 {
   \setbeamertemplate{itemize items}[checkmark]
   \begin{itemize}
-    \item Tree-based方案：$\varphi(x)$是Decision stump/Hamming tree
-    \item $\mathbf{v}$与$\varphi(x)$同时优化求解
+    \item Tree-based方案
+      \begin{itemize}
+        \item $\varphi(x)$是Decision stump/Hamming tree，搜索寻找最优分割
+        \item $\mathbf{v}$与$\varphi(x)$同时优化求解
+      \end{itemize}
+    \item Generalized bin-classifier方案
+      \begin{itemize}
+        \item $\varphi(x)$使用任意二分类模型，以最大化class-wise edge/最小化exp loss为目标
+        \item $\mathbf{v}$与$\varphi(x)$交替求解
+        \item $(\varphi*(\cdot),\mathbf{v}*) = \argmin_{\varphi(\cdot), \mathbf{v}} \hat{R}_{EXP}$
+      \end{itemize}
   \end{itemize}
 }
 \end{frame}
 
 \begin{frame}
-\frametitle{Base learner: the Decision Stump model}
+\frametitle{Decision stump model}
 \begin{itemize}
 \item Decision stump: 一个只有一个结点的分类树
 $$ \varphi_{j,b}(\mathbf{x}) = \left\{
@@ -509,123 +664,97 @@ $$ \varphi_{j,b}(\mathbf{x}) = \left\{
     1 & \quad \text{if } \mathbf{x}_j \geq b, \\
     -1 & \quad \text{otherwise.}
   \end{array} \right.$$
+  \begin{itemize}
+    \item maximize "discriminability": $(j*,b*) = \argmax_{j,b} \sum_{l}\| \gamma_l \|$
+    \item 如果$\mathbf{x}_j$是排好序的，这个搜索的过程是$\mathcal{O}(n)$的
+  \end{itemize}
 \item Hamming Tree
-\begin{itemize}
-  \item Decision stump作为内部结点的树
+  \begin{itemize}
+    \item Decision stump作为内部结点的树
+  \end{itemize}
 \end{itemize}
-\end{itemize}
-\end{frame}
-
-
-\begin{frame}
-\frametitle{Base learning}
-
-"Edge" $\gamma$ 是 per-class edge的和。
-$$\gamma = \Sigma_l \gamma_l, \gamma_l = \Sigma_{i=1}^n \mathbf{W}_{i,l} \mathbf{p}_{i,l} y_{i,l} $$
-$$ \gamma_l = \Sigma_{i=1}^{n}\mathbf{W}_{i,l}\mathfrak{I}\{\mathbf{p}_{i,l} = y_{i,l}\} - \Sigma_{i=1}^{n}\mathbf{W}_{i,l}\mathfrak{I}\{\mathbf{p}_{i,l} \neq y_{i,l}\} $$
-
-\pause
-
-The \textit{weighted per-class error rate}
-$$\mu_{l-} = \sum_{i=1}^{n}w_{i,j}\mathfrak{I}\{\varphi(\mathbf{x}_i) \neq y_{i,l}\}$$
-The \textit{weighted per-class correct classification rate}
-$$\mu_{l+} = \sum_{i=1}^{n}w_{i,j}\mathfrak{I}\{\varphi(\mathbf{x}_i) = y_{i,l}\}$$
-
-\pause
-
-$$\gamma_l = \mu_{l+} - \mu_{l-}$$
-
 \end{frame}
 
 \begin{frame}
-\frametitle{Base learning}
-
-\begin{block}{Find $\varphi(\bullet)$ by maximazing the full edge $\gamma$}
-\begin{itemize}
-\item Decision Stump: finding the best split cut
-\item Hamming tree: node split with the max edge improvement
-\item Generalized binary classifier.
-\end{itemize}
-\end{block}
-
-\begin{block}{Given $\varphi(\bullet)$, set the votes vector $\mathbf{v}$}
-$\mathbf{v}$ maximizing the full edge is:
-\[v_l = \left\{
-  \begin{array}{l l}
-  1 \quad \quad \text{   if } \mu_{l+} > \mu_{l-} \\
-  -1 \quad \text{ otherwise }
-  \end{array} \right. \]
-\end{block}
-
-\end{frame}
-
-\section{Multiboost on Spark}
-
-\subsection{Base learner: Decision Stump}
-
-\begin{frame}
-\frametitle{Decision stump}
+\frametitle{Decision stump on Spark: Implementation}
+\includegraphics[width=0.99\textwidth]{img/decision_stump_spark.png}
 \end{frame}
 
 \begin{frame}
-\frametitle{Decision stump on Apache Spark}
+\frametitle{Decision stump on Spark: Results}
+\includegraphics[width=0.45\textwidth]{img/letter.png} \ 
+\includegraphics[width=0.45\textwidth]{img/isolet.png} \\
+\includegraphics[width=0.45\textwidth]{img/optdigits.png} \ 
+\includegraphics[width=0.45\textwidth]{img/pendigits.png} \\
+{ \footnotesize
+    "letter", "isolet", "optdigits" and "pendigits" from UCI dataset \\
+    \href{http://archive.ics.uci.edu/ml/datasets.html}{http://archive.ics.uci.edu/ml/datasets.html}
+}
+\end{frame}
+
+\begin{frame}
+\frametitle{Decision stump on Spark: Deficiency}
+{ \footnotesize
+n: 150k+, $\|\mathbf{D}\|$ = 342926; run on 500 RDD partitions, 150 executors.\\
+}
+\includegraphics[width=0.98\textwidth]{img/ds_perf.png}
 \end{frame}
 
 \subsection{Base learner: generalized binary classifier with vote vector}
-
 \begin{frame}
-\frametitle{Generalized binary classifier as $\varphi(\dot)$}
+\frametitle{Generalized binary classifier as $\varphi(\bullet)$}
+\begin{itemize}
+\item $\varphi(x)$使用任意二分类模型，以最大化class-wise edge/最小化exp loss为目标
+\item $\mathbf{v}$与$\varphi(x)$交替求解
+\end{itemize}
+\begin{algorithm}[H]
+\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+ \Input{$\mathbf{W}, \mathcal{D}, N$}
+ \Output{$\varphi(\cdot), \mathbf{v}$}
+ \Begin{
+   $\mathbf{v} = vec(1, 1, \cdots 1)$\;
+   \For{$i \leftarrow 1, \cdots, N$}{
+    $\varphi(\cdot)$: $\varphi(\cdot) = \argmin_{\hat{\varphi}(\cdot)} \hat{R}_{EXP}(\mathbf{h}(\varphi(\mathbf(x)), \mathbf{v}) \mathbf{W})$\;
+    $\mathbf{v}$: $\mathbf{v} = \argmin_{\hat{\mathbf{v}}} \hat{R}_{EXP}(\mathbf{h}(\varphi(\mathbf(x)), \mathbf{v}) \mathbf{W})$\;
+   }
+   $\varphi(\cdot), \mathbf{v}$
+ }
+ \end{algorithm}
+
+$(\varphi*(\cdot),\mathbf{v}*) = \argmin_{\varphi(\cdot), \mathbf{v}} \hat{R}_{EXP}$
 \end{frame}
 
 \begin{frame}
 \frametitle{Generalized binary $\varphi$ on Apache Spark}
-\end{frame}
-
-
-\subsection{Strong learner: Iterative runner}
-
-\begin{frame}
-\frametitle{Strong learner}
-
-\end{frame}
-
-%----------------------------------------------------------------------------------------
-
-\subsection{实验与效果}
-
-\begin{frame}
-\frametitle{Experiments setup}
 \begin{itemize}
-\item 数据集来源 -- 内部、外部通用测试集
-\item 集群环境 TODO
+\item 使用spark.mllib.classification中以后的model/algorithm
+\item Boosting机制，只要base learner比random guess好，整体就是收敛的
+  \begin{itemize}
+    \item 收敛速度与bin classifier对edge/exp loss的近似程度有关
+  \end{itemize}
+\item 将$\mathbf{D} \in \{(\mathcal{R}^n, \{\pm1\}^K)\}$转化成$\mathbf{D}' \in \{(\mathcal{R}^n, \{\pm1\})\}$，作为binary classification的数据集
+  \begin{itemize}
+    \item $\mathbf{D} \Rightarrow \mathbf{D}'$是需要进一步考虑的部分 *TODO
+  \end{itemize}
 \end{itemize}
+\includegraphics[scale=0.5]{img/svm_bin.png}
 \end{frame}
 
-\begin{frame}
-\frametitle{运行时间}
-TODO: 对应数据集的训练时间长度
-\end{frame}
-
-\begin{frame}
-\frametitle{效果}
-\begin{itemize}
-\item 对应数据集的训练和测试error，有图
-\end{itemize}
-\end{frame}
-
-
-\subsection{后续工作}
+\section{后续工作}
 
 \begin{frame}
 \frametitle{后续工作}
 \begin{itemize}
-\item 使用LR、SVM作为$\varphi$，其loss与edge-maximizing目标一致需要理论证明
+\item $\mathbf{D} \Rightarrow \mathbf{D}'$，使用LR、SVM作为$\varphi(\cdot)$，其loss与edge-maximizing目标一致需要理论证明
 \item 训练数据中允许有missing data
 \item 现有时间基于Spark 1.1.x, 应用新的spark ml interface
-  \begin{itemize}
-    \item $\star \star \star$ 欢迎'Fork and Star'！
-  \end{itemize}
+\item 定义新的判别模型$\varphi(\cdot)$，实现exp loss对应的梯度计算$\frac{\partial \hat{R}_{EXP}}{\partial \varphi(\cdot)}$，优化求解模型参数
 \end{itemize}
+
+\begin{block}{}
+欢迎PR！\\
+\href{https://github.com/baigang/spark_multiboost}{https://github.com/baigang/spark\_multiboost}
+\end{block}
 \end{frame}
 
 \end{document} 
