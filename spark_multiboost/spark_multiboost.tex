@@ -129,9 +129,9 @@
 \end{frame}
 
 \begin{frame}
-\frametitle{关于这一文档}
-“抛砖引玉”，期待后续的讨论。 \\ 
-项目在\url{https://github.com/baigang/spark_multiboost}，欢迎大家参与。 \ \\
+\frametitle{关于这一演示文稿}
+“抛砖引玉”，期待后续的讨论。 \\
+项目在\url{https://github.com/baigang/spark_multiboost}，欢迎大家参与。 \\ \ \\
 
 \LaTeX\  Beamer presentation.  \\
 \url{https://github.com/baigang/slides/spark_multiboost} \\ \ \\
@@ -167,18 +167,14 @@ BUAA $\rightarrow$ Yahoo! $\rightarrow$ OneBox search (360 so.com) $\rightarrow$
   \begin{columns}[T]
     \begin{column}{.5\textwidth}
       \begin{center}
-      \includegraphics[width=0.8\textwidth]{img/good_ad.png}
-      \end{center}
-      \begin{center}
-      \includegraphics[width=0.15\textwidth]{img/emoji_smiley.png}
+        \includegraphics[width=0.8\textwidth]{img/good_ad.png} \\
+        \includegraphics[width=0.15\textwidth]{img/emoji_smiley.png}
       \end{center}
     \end{column}
     \begin{column}{.5\textwidth}
       \begin{center}
-      \includegraphics[width=0.8\textwidth]{img/bad_ad.png}
-      \end{center}
-      \begin{center}
-      \includegraphics[width=0.15\textwidth]{img/emoji_unamused.png}
+        \includegraphics[width=0.8\textwidth]{img/bad_ad.png} \\
+        \includegraphics[width=0.15\textwidth]{img/emoji_unamused.png}
       \end{center}
     \end{column}
   \end{columns}
@@ -305,7 +301,7 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 
 为了得到这个vector-valued function $\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$, 我们为每个$\mathit{l} \in \mathcal{L}$ 都训练一个\textit{binary} classifier，预测时将判断每一个标签的结果。
 
-* {\small \color{gray} One-versus-all implemented in LibSVM, scikit-learn, etc.}
+* {\small \color{gray} One-versus-all implemented in LibSVM, scikit-learn, etc.} \\
 * {\small \color{gray} Ad targeting往往使用per-campaign model，为每一个ad compaign训练一个二分类模型。}
 \pause
 
@@ -490,8 +486,8 @@ $$\begin{array}{c}
 \begin{frame}
 \frametitle{The base learner factor $\alpha$}
 The edge $\gamma$，描述加权重之后的正确率与错误率的差。 \\
-$$ \gamma(\mathbf{W}, y, \mathbf{h}) = \Sigma_{i=1}^{n} \Sigma_{l=1}^{L} (\mathbf{W}_{i,l} \mathcal{I}_+ - \mathbf{W}_{i,l}\mathcal{I}_-)$$
-$$\text{同时，所有权重和为1。 } \sum_{i=1}^{n} \sum_{l=1}^{K}\mathbf{W}_{i,l}(\mathcal{I}_+ + \mathcal{I}_-) = 1$$
+$$ \gamma(\mathbf{W}, y, \mathbf{h}) = \Sigma_{i=1}^{n} \Sigma_{l=1}^{L} \mathbf{W}_{i,l} (\mathcal{I}_+ - \mathcal{I}_-)$$
+$$\text{同时，所有权重和为1： } \Sigma_{i=1}^{n} \Sigma_{l=1}^{K}\mathbf{W}_{i,l}(\mathcal{I}_+ + \mathcal{I}_-) = 1$$
 \begin{block}{Exponential loss with $\gamma$:}
 $$ \begin{array}{c}
 \hat{R}_{EXP} = \frac{e^\alpha + e^{-\alpha}}{2}\sum_{i=1}^{n} \sum_{l=1}^{K}\mathbf{W}_{i,l}(\mathcal{I}_+ + \mathcal{I}_-) \\
@@ -560,18 +556,51 @@ $$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v}$$
 \end{frame}
 
 \begin{frame}
-\frametitle{Base learner training}
-\begin{itemize}
-\item 求$\varphi(x)$：按照什么原则对feature space做划分
-\item 求$\mathbf{v}$：如何最优的"cast to labels"
-\end{itemize}
+\frametitle{Factorization of base learners}
+\begin{columns}[T]
+  \begin{column}{.55\textwidth}
+    \includegraphics[width=\textwidth]{img/gbc_1.png}
+  \end{column}
+  \begin{column}{.45\textwidth}
+    \ \\ \ \\
+    有3个label的多标签分类数据集。
+  \end{column}
+\end{columns}
+\end{frame}
 
-\pause
+\begin{frame}
+\frametitle{Factorization of base learners}
+\begin{columns}[T]
+  \begin{column}{.55\textwidth}
+    \includegraphics[width=\textwidth]{img/gbc_2.png}
+  \end{column}
+  \begin{column}{.45\textwidth}
+    \ \\ \ \\
+    $\varphi(\mathbf{x})$对\textit{feature space}做划分，将样本集分为\{+1\}和\{-1\}两部分。\\ \ \\
+    $$\mathbf{v} = (v_{{\color{green} \bullet}}, v_{{\color{blue} \bullet}}, v_{{\color{magenta} \bullet}}) = (1,1,1)$$
+  \end{column}
+\end{columns}
+\end{frame}
 
-\begin{block}{ }
-Minimizing the loss $R_{EXP}$ i.e Maximizing "the edge" $\gamma$.
- $$\varphi(\mathbf{x}), \mathbf{v} = \argmax_{\varphi(\cdot), \mathbf{v}} \gamma(\mathbf{W}, y, \mathbf{h}(\varphi(\cdot), \mathbf{v}))$$
-\end{block}
+\begin{frame}
+\frametitle{Factorization of base learners}
+\begin{columns}[T]
+  \begin{column}{.55\textwidth}
+    \includegraphics[width=\textwidth]{img/gbc_3.png}
+  \end{column}
+  \begin{column}{.45\textwidth}
+    \ \\
+    %根据$\varphi(\mathbf{x})$在每个label下的划分错误率，使用vote vector $\mathbf{v}$来修正结果。\\ \ \\
+    %对于$\varphi(\mathbf{x})$在该label下正确率大于错误率的，如图中的{\color{green} $\bullet$}，$\mathbf{v}$对应项为+1；对于正确率小于错误路的，如图中的{\color{blue} $\bullet$}和{\color{magenta} $\bullet$}，$\mathbf{v}$对应项为-1。\\ \ \\
+    $\varphi(\mathbf{x})$正确率高的: \\
+    ${v}_{{\color{green} \bullet}} = +1,$ \\ \ \\
+    $\varphi(\mathbf{x})$错误率高的，通过$\mathbf{v}$来翻转: \\
+    ${v}_{{\color{blue} \bullet}} = -1,$ \\
+    ${v}_{{\color{magenta} \bullet}} = -1.$
+    $$\mathbf{v} = (v_{{\color{green} \bullet}}, v_{{\color{blue} \bullet}}, v_{{\color{magenta} \bullet}}) = (1,-1,-1)$$
+    最终整体的在每个label上，正确率都大于错误率。 \\ \ \\
+  \end{column}
+\end{columns}
 \end{frame}
 
 
@@ -652,7 +681,7 @@ Minimizing the loss $R_{EXP}$ i.e Maximizing "the edge" $\gamma$.
 
 \begin{frame}
 \frametitle{Base learner on Apache Spark}
-最核心的内容是实现 \texttt{baseLearnerAlgo.run(iterData.dataSet)}。 \\
+最核心的内容是实现 {\color{blue} \texttt{baseLearnerAlgo.run(iterData.dataSet)}}。 \\
 \includegraphics[scale=0.5,left]{img/base_algo.png}
 \end{frame}
 
@@ -661,16 +690,16 @@ Minimizing the loss $R_{EXP}$ i.e Maximizing "the edge" $\gamma$.
 {
   \setbeamertemplate{itemize items}[checkmark]
   \begin{itemize}
-    \item Tree-based方案
-      \begin{itemize}
-        \item $\varphi(x)$是Decision stump/Hamming tree，搜索寻找最优分割
-        \item $\mathbf{v}$与$\varphi(x)$同时优化求解
-      \end{itemize}
+    \item Decision stump: 一个只有一个结点的决策树
+       $$ \varphi_{j,b}(\mathbf{x}) = \left\{
+            \begin{array}{l l}
+              1 & \quad \text{if } \mathbf{x}_j \geq b, \\
+             -1 & \quad \text{otherwise.}
+            \end{array} \right.$$
+    \item Hamming tree: Decision stump作为结点的决策树
     \item Generalized bin-classifier方案
       \begin{itemize}
-        \item $\varphi(x)$使用任意二分类模型，以最大化class-wise edge/最小化exp loss为目标
-        \item $\mathbf{v}$与$\varphi(x)$交替求解
-        \item $(\varphi*(\cdot),\mathbf{v}*) = \argmin_{\varphi(\cdot), \mathbf{v}} \hat{R}_{EXP}$
+        \item $\varphi(x)$使用任意二分类模型，与$\mathbf{v}$一起来最大化class-wise edge/最小化exp loss。
       \end{itemize}
   \end{itemize}
 }
@@ -678,22 +707,15 @@ Minimizing the loss $R_{EXP}$ i.e Maximizing "the edge" $\gamma$.
 
 \begin{frame}
 \frametitle{Decision stump model}
-\begin{itemize}
-\item Decision stump: 一个只有一个结点的分类树
-$$ \varphi_{j,b}(\mathbf{x}) = \left\{
-  \begin{array}{l l}
-    1 & \quad \text{if } \mathbf{x}_j \geq b, \\
-    -1 & \quad \text{otherwise.}
-  \end{array} \right.$$
   \begin{itemize}
-    \item maximize "discriminability": $(j*,b*) = \argmax_{j,b} \sum_{l}\| \gamma_l \|$
-    \item 如果$\mathbf{x}_j$是排好序的，这个搜索的过程是$\mathcal{O}(n)$的
+    \item 寻找最优划分来maximize "discriminability": $(j*,b*) = \argmax_{j,b} \sum_{l}\| \gamma_l \|$
+    \includegraphics[width=0.6\textwidth]{img/ds_split.png}
+    \begin{itemize}
+      \item $\text{If } y_{i,l}=1, \gamma_l -= 2w_{il}; \text{Or } y_{i,l}=-1, \gamma_l += 2w_{i,l}.$
+    \end{itemize}
+    \item 单机版：$\mathbf{x}_j$排序复杂度$\mathcal{O}(\log(n))$，搜索的过程是$\mathcal{O}(n)$的
+    \item Spark: {\color{blue} \texttt{flatMap} $\rightarrow$ \texttt{reduceByKey}}
   \end{itemize}
-\item Hamming Tree
-  \begin{itemize}
-    \item Decision stump作为内部结点的树
-  \end{itemize}
-\end{itemize}
 \end{frame}
 
 \begin{frame}
@@ -714,68 +736,92 @@ $$ \varphi_{j,b}(\mathbf{x}) = \left\{
 \end{frame}
 
 \begin{frame}
-\frametitle{Decision stump on Spark: Deficiency}
+\frametitle{Decision stump on Spark: Performance}
 { \footnotesize
 n: 150k+, $\|\mathbf{D}\|$ = 342926; run on 500 RDD partitions, 150 executors.\\
 }
-\includegraphics[width=0.98\textwidth]{img/ds_perf.png}
+\includegraphics[width=0.9\textwidth]{img/ds_perf.png}
 \end{frame}
 
 \subsection{Base learner: generalized binary classifier with vote vector}
-\begin{frame}
-\frametitle{Generalized binary classifier as $\varphi(\bullet)$}
-\begin{itemize}
-\item $\varphi(x)$使用任意二分类模型，以最大化class-wise edge/最小化exp loss为目标
-\item $\mathbf{v}$与$\varphi(x)$交替求解
-\end{itemize}
-\begin{algorithm}[H]
-\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
- \Input{$\mathbf{W}, \mathcal{D}, N$}
- \Output{$\varphi(\cdot), \mathbf{v}$}
- \Begin{
-   $\mathbf{v} = vec(1, 1, \cdots 1)$\;
-   \For{$i \leftarrow 1, \cdots, N$}{
-    $\varphi(\cdot)$: $\varphi(\cdot) = \argmin_{\hat{\varphi}(\cdot)} \hat{R}_{EXP}(\mathbf{h}(\varphi(\mathbf(x)), \mathbf{v}) \mathbf{W})$\;
-    $\mathbf{v}$: $\mathbf{v} = \argmin_{\hat{\mathbf{v}}} \hat{R}_{EXP}(\mathbf{h}(\varphi(\mathbf(x)), \mathbf{v}) \mathbf{W})$\;
-   }
-   $\varphi(\cdot), \mathbf{v}$
- }
- \end{algorithm}
 
-$(\varphi*(\cdot),\mathbf{v}*) = \argmin_{\varphi(\cdot), \mathbf{v}} \hat{R}_{EXP}$
+\begin{frame}
+\frametitle{Base learner: generalized binary classifier with vote vector}
+\begin{itemize}
+\item Decision stump的问题
+  \begin{itemize}
+    \item 是非常弱的二分类模型
+    \item Decision stump模型训练的数据传输量很大
+    \item Tree-based模型，并不适合高维稀疏数据
+  \end{itemize}
+\end{itemize}
+
+\pause
+
+\begin{block}{}
+我们需要一个更强的、更易于训练并且适应高维稀疏数据的$\varphi(\cdot)$，来对\textit{feature space}做二元划分。
+\end{block}
 \end{frame}
+
+%\begin{frame}
+%\frametitle{Generalized binary classifier as $\varphi(\bullet)$}
+%\begin{itemize}
+%\item $\varphi(x)$使用任意二分类模型，以最大化class-wise edge/最小化exp loss为目标
+%\item $\mathbf{v}$与$\varphi(x)$交替求解
+%\end{itemize}
+%\begin{algorithm}[H]
+%\SetKwInOut{Input}{input}\SetKwInOut{Output}{output}
+% \Input{$\mathbf{W}, \mathcal{D}, N$}
+% \Output{$\varphi(\cdot), \mathbf{v}$}
+% \Begin{
+%   $\mathbf{v} = vec(1, 1, \cdots 1)$\;
+%   \For{$i \leftarrow 1, \cdots, N$}{
+%    $\varphi(\cdot)$: $\varphi(\cdot) = \argmin_{\hat{\varphi}(\cdot)} \hat{R}_{EXP}(\mathbf{h}(\varphi(\mathbf(x)), \mathbf{v}) \mathbf{W})$\;
+%    $\mathbf{v}$: $\mathbf{v} = \argmin_{\hat{\mathbf{v}}} \hat{R}_{EXP}(\mathbf{h}(\varphi(\mathbf(x)), \mathbf{v}) \mathbf{W})$\;
+%   }
+%   $\varphi(\cdot), \mathbf{v}$
+% }
+% \end{algorithm}
+%
+%$(\varphi*(\cdot),\mathbf{v}*) = \argmin_{\varphi(\cdot), \mathbf{v}} \hat{R}_{EXP}$
+%\end{frame}
 
 \begin{frame}
 \frametitle{Generalized binary $\varphi$ on Apache Spark}
 \begin{itemize}
-\item 使用spark.mllib.classification中以后的model/algorithm
+\item 使用spark.mllib.classification中已有的model/algorithm
+\begin{itemize}
+  \item SVM, LR with GradientDescent, LBFGS.
+\includegraphics[scale=0.5]{img/svm_bin.png}
+\end{itemize}
 \item Boosting机制，只要base learner比random guess好，整体就是收敛的
   \begin{itemize}
-    \item 收敛速度与bin classifier对edge/exp loss的近似程度有关
+    \item 通过vote vector $\mathbf{v}$ 来保证每个label上的错误率小于0.5。
   \end{itemize}
-\item 将$\mathbf{D} \in \{(\mathcal{R}^n, \{\pm1\}^K)\}$转化成$\mathbf{D}' \in \{(\mathcal{R}^n, \{\pm1\})\}$，作为binary classification的数据集
+\item 将$\mathbf{D} \in \{(\mathcal{R}^n, {\color{blue} \{\pm1\}^K } )\}$转化成$\mathbf{D}' \in \{(\mathcal{R}^n, { \color{blue} \{\pm1\} } )\}$，作为binary classification的数据集
   \begin{itemize}
+    \item 使用$\{\pm1\}^K$中的一个维度作为1维label的取值
     \item $\mathbf{D} \Rightarrow \mathbf{D}'$是需要进一步考虑的部分 *TODO
   \end{itemize}
 \end{itemize}
-\includegraphics[scale=0.5]{img/svm_bin.png}
 \end{frame}
 
 \section{后续工作}
 
 \begin{frame}
 \frametitle{后续工作}
+
 \begin{itemize}
-\item $\mathbf{D} \Rightarrow \mathbf{D}'$，使用LR、SVM作为$\varphi(\cdot)$，其loss与edge-maximizing目标一致需要理论证明
-\item 训练数据中允许有missing data
-\item 现有时间基于Spark 1.1.x, 应用新的spark ml interface
-\item 定义新的判别模型$\varphi(\cdot)$，实现exp loss对应的梯度计算$\frac{\partial \hat{R}_{EXP}}{\partial \varphi(\cdot)}$，优化求解模型参数
+\item 训练$\varphi(\cdot)$时，如何转换数据集$\mathbf{D} \Rightarrow \mathbf{D}'$，使得base learner的效果最好
+\item 使用LR、SVM作为$\varphi(\cdot)$，其loss与edge-maximizing目标一致性需要理论证明
+\item $\star$ 现有实现基于Spark 1.1.x, 应用新的spark ml interface
+\item $\star \star \star$ 定义新的判别模型$\varphi(\cdot)$，实现exp loss对应的梯度计算$\frac{\partial \hat{R}_{EXP}}{\partial \varphi(\cdot)}$，优化求解模型参数
 \end{itemize}
 
-\begin{block}{}
-欢迎PR！\\
-\href{https://github.com/baigang/spark_multiboost}{https://github.com/baigang/spark\_multiboost}
+\begin{block}{欢迎fork \& pull request！}
+\url{https://github.com/baigang/spark_multiboost}
 \end{block}
+
 \end{frame}
 
 \end{document} 
