@@ -130,7 +130,8 @@
 
 \begin{frame}
 \frametitle{关于这一文档}
-“抛砖引玉”，期待后续的讨论。 \\ \ \\
+“抛砖引玉”，期待后续的讨论。 \\ 
+项目在\url{https://github.com/baigang/spark_multiboost}，欢迎大家参与。 \ \\
 
 \LaTeX\  Beamer presentation.  \\
 \url{https://github.com/baigang/slides/spark_multiboost} \\ \ \\
@@ -305,7 +306,7 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 为了得到这个vector-valued function $\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$, 我们为每个$\mathit{l} \in \mathcal{L}$ 都训练一个\textit{binary} classifier，预测时将判断每一个标签的结果。
 
 * {\small \color{gray} One-versus-all implemented in LibSVM, scikit-learn, etc.}
-
+* {\small \color{gray} Ad targeting往往使用per-campaign model，为每一个ad compaign训练一个二分类模型。}
 \pause
 
 优缺点：
@@ -490,6 +491,7 @@ $$\begin{array}{c}
 \frametitle{The base learner factor $\alpha$}
 The edge $\gamma$，描述加权重之后的正确率与错误率的差。 \\
 $$ \gamma(\mathbf{W}, y, \mathbf{h}) = \Sigma_{i=1}^{n} \Sigma_{l=1}^{L} (\mathbf{W}_{i,l} \mathcal{I}_+ - \mathbf{W}_{i,l}\mathcal{I}_-)$$
+$$\text{同时，所有权重和为1。 } \sum_{i=1}^{n} \sum_{l=1}^{K}\mathbf{W}_{i,l}(\mathcal{I}_+ + \mathcal{I}_-) = 1$$
 \begin{block}{Exponential loss with $\gamma$:}
 $$ \begin{array}{c}
 \hat{R}_{EXP} = \frac{e^\alpha + e^{-\alpha}}{2}\sum_{i=1}^{n} \sum_{l=1}^{K}\mathbf{W}_{i,l}(\mathcal{I}_+ + \mathcal{I}_-) \\
@@ -497,22 +499,21 @@ $$ \begin{array}{c}
  = \frac{e^\alpha + e^{-\alpha}}{2} + \frac{e^\alpha - e^{-\alpha}}{2}\gamma.
 \end{array} $$
 \end{block}
-$$\text{N.B,   } \sum_{i=1}^{n} \sum_{l=1}^{K}\mathbf{W}_{i,l}(\mathcal{I}_+ + \mathcal{I}_-) = 1$$
 \end{frame}
 
 
 \begin{frame}
 \frametitle{The base learner factor $\alpha$}
 \begin{block}{$\alpha$ minimizing the EXP loss:}
-$$\frac{\partial Z(\alpha, \mathbf{h}, \mathbf{W})}{\partial \alpha} = 0$$
+$$\frac{\partial \hat{R}_{EXP}(\alpha, \mathbf{h}, \mathbf{W})}{\partial \alpha} = 0$$
 $$\alpha = \frac{1}{2} \log \frac{1+\gamma}{1-\gamma}$$
 \end{block}
 
 \pause
 
 \begin{block}{EXP loss becomes:}
-$$Z(\gamma) = \sqrt{1 - \gamma^2}$$
-最大化 edge 就是最小化 exponential loss.
+$$\hat{R}_{EXP}(\gamma) = \sqrt{1 - \gamma^2}$$
+最小化 exponential loss $\Rightarrow$ 最大化 edge。
 \end{block}
 
 \end{frame}
@@ -630,13 +631,33 @@ Minimizing the loss $R_{EXP}$ i.e Maximizing "the edge" $\gamma$.
 \includegraphics[scale=0.5,left]{img/adbm_algo_spark.png} \\
 \includegraphics[scale=0.5,left]{img/adbm_run.png}
 \end{figure}
+\end{frame}
 
+\begin{frame}
+\frametitle{AdaBoost.MH on Apache Spark}
+迭代过程：
+\includegraphics[scale=0.5,left]{img/iteration.png}
+\end{frame}
+
+\begin{frame}
+\frametitle{AdaBoost.MH on Apache Spark}
+\includegraphics[scale=0.5,left]{img/a1_train_base.png} \\
+\includegraphics[scale=0.5,left]{img/a2_hypoth.png} \\
+\includegraphics[scale=0.5,left]{img/a3_sumz.png} \\
+\includegraphics[scale=0.5,left]{img/a4_reweighting.png} \\
+\includegraphics[scale=0.5,left]{img/a5_nextiter.png} 
 \end{frame}
 
 \subsection{Base learner on Apache Spark}
 
 \begin{frame}
 \frametitle{Base learner on Apache Spark}
+最核心的内容是实现 \texttt{baseLearnerAlgo.run(iterData.dataSet)}。 \\
+\includegraphics[scale=0.5,left]{img/base_algo.png}
+\end{frame}
+
+\begin{frame}
+\frametitle{Base learners}
 {
   \setbeamertemplate{itemize items}[checkmark]
   \begin{itemize}
