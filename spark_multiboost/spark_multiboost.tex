@@ -134,7 +134,7 @@
 项目在\url{https://github.com/baigang/spark_multiboost}，欢迎大家参与。 \\ \ \\
 
 \LaTeX\  Beamer presentation.  \\
-\url{https://github.com/baigang/slides/spark_multiboost} \\ \ \\
+{ \small \url{https://github.com/BaiGang/slides/tree/master/spark_multiboost} } \\ \ \\
 
 About me: \\
 BUAA $\rightarrow$ Yahoo! $\rightarrow$ OneBox search (360 so.com) $\rightarrow$ Sina/Weibo.
@@ -284,17 +284,16 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 \end{block}
 \end{frame}
 
-\begin{frame}
-\frametitle{Side note: why not clustering?}
-
-\begin{itemize}
-\item 为什么不用Clustering
-  \begin{itemize}
-    \item Cluster结果 $\neq$  pre-defined labels
-    \item 但可以作为user feature
-  \end{itemize}
-\end{itemize}
-\end{frame}
+%\begin{frame}
+%\frametitle{Side note: why not clustering?}
+%\begin{itemize}
+%\item 为什么不用Clustering
+%  \begin{itemize}
+%    \item Cluster结果 $\neq$  pre-defined labels
+%    \item 但可以作为user feature
+%  \end{itemize}
+%\end{itemize}
+%\end{frame}
 
 \begin{frame}
 \frametitle{Multi-Label classification: Per-label bin-classification}
@@ -652,7 +651,7 @@ $$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v}$$
     \item Base learner的training逻辑与strong learner解耦合
   \end{itemize}
 \end{itemize}
-{ \footnotesize
+{ \small
 \href{https://github.com/BaiGang/spark_multiboost/blob/master/src/main/scala/org/apache/spark/mllib/classification/multilabel/stronglearners/AdaBoostMH.scala}{https://github.com/...../.../stronglearners/AdaBoostMH.scala}
 }
 \begin{figure}
@@ -681,7 +680,7 @@ $$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v}$$
 
 \begin{frame}
 \frametitle{Base learner on Apache Spark}
-最核心的内容是实现 {\color{blue} \texttt{baseLearnerAlgo.run(iterData.dataSet)}}。 \\
+最核心的内容是实现 {\color{blue} \texttt{baseLearnerAlgo.run(iterData.dataSet)}}。 \\ \ \\
 \includegraphics[scale=0.5,left]{img/base_algo.png}
 \end{frame}
 
@@ -713,7 +712,7 @@ $$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v}$$
     \begin{itemize}
       \item $\text{If } y_{i,l}=1, \gamma_l -= 2w_{il}; \text{Or } y_{i,l}=-1, \gamma_l += 2w_{i,l}.$
     \end{itemize}
-    \item 单机版：$\mathbf{x}_j$排序复杂度$\mathcal{O}(\log(n))$，搜索的过程是$\mathcal{O}(n)$的
+    \item 单机版：$\mathbf{x}_j$排序复杂度$\mathcal{O}(m\log(m))$，搜索的过程$\mathcal{O}(m)$，总的$\mathcal{O}(nm\log(m))$
     \item Spark: {\color{blue} \texttt{flatMap} $\rightarrow$ \texttt{reduceByKey}}
   \end{itemize}
 \end{frame}
@@ -729,7 +728,7 @@ $$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v}$$
 \includegraphics[width=0.45\textwidth]{img/isolet.png} \\
 \includegraphics[width=0.45\textwidth]{img/optdigits.png} \ 
 \includegraphics[width=0.45\textwidth]{img/pendigits.png} \\
-{ \footnotesize
+{ \small
     "letter", "isolet", "optdigits" and "pendigits" from UCI dataset \\
     \href{http://archive.ics.uci.edu/ml/datasets.html}{http://archive.ics.uci.edu/ml/datasets.html}
 }
@@ -737,7 +736,7 @@ $$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v}$$
 
 \begin{frame}
 \frametitle{Decision stump on Spark: Performance}
-{ \footnotesize
+{ \small
 n: 150k+, $\|\mathbf{D}\|$ = 342926; run on 500 RDD partitions, 150 executors.\\
 }
 \includegraphics[width=0.9\textwidth]{img/ds_perf.png}
