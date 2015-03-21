@@ -300,8 +300,8 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 
 为了得到这个vector-valued function $\mathcal{F} : \mathcal{X} \rightarrow \mathcal{L}$, 我们为每个$\mathit{l} \in \mathcal{L}$ 都训练一个\textit{binary} classifier，预测时将判断每一个标签的结果。
 
-* {\small \color{gray} One-versus-all implemented in LibSVM, scikit-learn, etc.} \\
-* {\small \color{gray} Ad targeting往往使用per-campaign model，为每一个ad compaign训练一个二分类模型。}
+{\small \color{gray} * One-versus-all implemented in LibSVM, scikit-learn, etc.} \\
+{\small \color{gray} * Ad targeting往往使用per-campaign model，为每一个ad compaign训练一个二分类模型。}
 \pause
 
 优缺点：
@@ -398,7 +398,7 @@ $$\mathcal{Z}_{H} = \frac{1}{\|\mathcal{D}\|} \frac{1}{\|\mathcal{L}\|} \sum_{i=
 \textbf{MH}: \textbf{M}ulti-class with \textbf{H}amming loss.
 \end{block}
 To produce a \textbf{vector-valued} discriminant function $\mathcal{F} : \mathcal{R}^n \rightarrow \mathcal{R}^K$ with a small \textbf{Hamming loss} $\hat{R}_H (\mathcal{F}, \mathbf{W})$ by minimizing the \textbf{weighted multi-class exponential margin-based error}
-$$\hat{R}_{EXP}(\mathcal{F}, \mathbf{W}) = \frac{1}{mK} {{\Sigma}_{i=1}^m} {{\Sigma}_{l=1}^K} {\mathbf{W}_{i,l}\exp(- f_l^{(T)} y_{i,l})}$$
+$$\hat{R}_{EXP}(\mathcal{F}, \mathbf{W}) = \frac{1}{mK} {{\Sigma}_{i=1}^m} {{\Sigma}_{l=1}^K} {\mathbf{W}_{i,l}\exp(- \mathcal{F}_l y_{i,l})}$$
 
 The weights $\mathbf{W}$:
 $${\Sigma}_{i,l} \mathbf{W}_{i, l} = 1$$
@@ -406,6 +406,11 @@ $${\Sigma}_{i,l} \mathbf{W}_{i, l} = 1$$
 
 \begin{frame}
 \frametitle{Exponential loss vs Hamming loss}
+
+\begin{figure}
+\includegraphics[width=0.6\textwidth]{img/convex-bounds.png}
+\end{figure}
+
 \begin{itemize}
 \item Exponential loss "upper-bounds" Hamming loss.
   \begin{itemize}
@@ -416,10 +421,6 @@ $${\Sigma}_{i,l} \mathbf{W}_{i, l} = 1$$
     \item Easy to optimize.
   \end{itemize}
 \end{itemize}
-
-\begin{figure}
-\includegraphics[width=0.6\textwidth]{img/convex-bounds.png}
-\end{figure}
 
 \end{frame}
 
@@ -470,7 +471,7 @@ $$\begin{array}{c}
 \hat{R}_{EXP}(\alpha, \mathbf{h}, \mathbf{W}) = \sum_{i=1}^{n} \sum_{l=1}^{K} w_{i,l} \exp(-\alpha \mathbf{h}_{i,l} y_{i,l}) \\
  = \sum_{i=1}^{n} \sum_{l=1}^{K} w_{i,l}(\mathcal{I}_+ e^{-\alpha} + \mathcal{I}_- e^{\alpha})
  \end{array},$$
-$$\text{with } \mathcal{I}_+ = \mathcal{I}[y_{i,l} \mathbf{h}_{i,l} > 0], \mathcal{I}_- = \mathcal{I}[y_{i,l} \mathbf{h}_{i,l} > 0]. $$
+$$\text{with } \mathcal{I}_+ = \mathcal{I}[y_{i,l} \mathbf{h}_{i,l} > 0], \mathcal{I}_- = \mathcal{I}[y_{i,l} \mathbf{h}_{i,l} < 0]. $$
 \pause
 Re-phrasing the EXP loss:
 $$\begin{array}{c}
@@ -485,7 +486,7 @@ $$\begin{array}{c}
 \begin{frame}
 \frametitle{The base learner factor $\alpha$}
 The edge $\gamma$，描述加权重之后的正确率与错误率的差。 \\
-$$ \gamma(\mathbf{W}, y, \mathbf{h}) = \Sigma_{i=1}^{n} \Sigma_{l=1}^{L} \mathbf{W}_{i,l} (\mathcal{I}_+ - \mathcal{I}_-)$$
+$$ \gamma(\mathbf{W}, y, \mathbf{h}) = \Sigma_{i=1}^{m} \Sigma_{l=1}^{L} \mathbf{W}_{i,l} (\mathcal{I}_+ - \mathcal{I}_-)$$
 $$\text{同时，所有权重和为1： } \Sigma_{i=1}^{n} \Sigma_{l=1}^{K}\mathbf{W}_{i,l}(\mathcal{I}_+ + \mathcal{I}_-) = 1$$
 \begin{block}{Exponential loss with $\gamma$:}
 $$ \begin{array}{c}
@@ -539,6 +540,9 @@ $$\hat{R}_{EXP}(\gamma) = \sqrt{1 - \gamma^2}$$
 
 {\color{purple} "The return of AdaBoost.MH: multi-class Hamming trees", Kegl, 2014.}
 把general vector-valued function $\mathcal{B}$ 分解
+\begin{block}{}
+$$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v}$$
+\end{block}
 \begin{itemize}
 \item $\varphi(x)$: a \textit{label independent} binary classifier 
   \begin{itemize}
@@ -549,9 +553,6 @@ $$\hat{R}_{EXP}(\gamma) = \sqrt{1 - \gamma^2}$$
     \item 将$\varphi(x)$划分的${\pm 1}$结果cast到\textit{label space} $\{\pm 1\}^K$上
   \end{itemize}
 \end{itemize}
-\begin{block}{}
-$$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v}$$
-\end{block}
 \end{frame}
 
 \begin{frame}
@@ -576,7 +577,10 @@ $$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v}$$
   \begin{column}{.45\textwidth}
     \ \\ \ \\
     $\varphi(\mathbf{x})$对\textit{feature space}做划分，将样本集分为\{+1\}和\{-1\}两部分。\\ \ \\
-    $$\mathbf{v} = (v_{{\color{green} \bullet}}, v_{{\color{blue} \bullet}}, v_{{\color{magenta} \bullet}}) = (1,1,1)$$
+    $$\gamma_{\color{green} \bullet} > 0$$
+    $$\gamma_{\color{blue} \bullet} < 0$$
+    $$\gamma_{\color{magenta} \bullet} < 0$$
+    $$\mathbf{v} = (v_{{\color{green} \bullet}}, v_{{\color{blue} \bullet}}, v_{{\color{magenta} \bullet}}) = (?,?,?)$$
   \end{column}
 \end{columns}
 \end{frame}
@@ -613,7 +617,7 @@ $$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v}$$
  \Begin{
    {\color{blue} ${\mathbf{W}}_1(i, l) = \frac{1}{mK}$}\;
    \For{$t \leftarrow 1, \cdots, T$}{
-    Base learner and the edge: {\color{blue} $({\mathcal{B}}_t, \gamma) \leftarrow \mathfrak{B}(\mathcal{D}, \mathbf{W}_t)$}\;
+    Base learner and the edge: {\color{blue} $((\varphi_t(\cdot), \mathbf{v}_t), \gamma) \leftarrow \mathfrak{B}(\mathcal{D}, \mathbf{W}_t)$}\;
     Get hypothesis set: $h_t \leftarrow \mathbf{B}(\mathcal{D})$\;
     Get the base coefficient {\color{blue} ${\alpha}_t \leftarrow \frac{1}{2} \log \frac{1+\gamma}{1-\gamma} $}\;
     Update the weights: 
@@ -712,7 +716,7 @@ $$\mathcal{B}(\mathbf{x}) = \varphi(\mathbf{x}) \mathbf{v}$$
     \begin{itemize}
       \item $\text{If } y_{i,l}=1, \gamma_l -= 2w_{il}; \text{Or } y_{i,l}=-1, \gamma_l += 2w_{i,l}.$
     \end{itemize}
-    \item 单机版：$\mathbf{x}_j$排序复杂度$\mathcal{O}(m\log(m))$，搜索的过程$\mathcal{O}(m)$，总的$\mathcal{O}(nm\log(m))$
+    \item 单机版：$\mathbf{x}_j$排序复杂度$\mathcal{O}(m\log(m))$，搜索的过程$\mathcal{O}(m)$，总的$\mathcal{O}(n(m\log(m) + m))$
     \item Spark: {\color{blue} \texttt{flatMap} $\rightarrow$ \texttt{reduceByKey}}
   \end{itemize}
 \end{frame}
